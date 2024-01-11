@@ -1,5 +1,6 @@
 from typing import Optional, List, Literal
 from langchain_core.documents import Document
+from langchain_core.vectorstores import VectorStoreRetriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.vectorstores import Chroma
@@ -16,61 +17,52 @@ def _tiktoken_len(text):
     tokens = tokenizer.encode(text)
     return len(tokens)
 
+class VectorDB:
 
-def create(docs:List[Document], persist_db_path:Optional[str]=None) -> Chroma:
-    # store it into vector store (chroma) using gpt4all embeddings
-    return Chroma.from_documents(
-        documents=docs,
-        embedding=GPT4AllEmbeddings(),
-        persist_directory=persist_db_path)
+    def __init__(self, db_path:Optional[str]):
+        self._db_path = db_path
+        self._impl = Chroma(embedding_function=GPT4AllEmbeddings(), persist_directory=db_path)
 
+    def add_docs(self, docs:List[Document]) -> None:
+        self._impl = Chroma.from_documents(
+            documents=docs, embedding=self._impl.embeddings, persist_directory=self._db_path)
 
-# this splits the input text
-text_splitter = RecursiveCharacterTextSplitter(
-    # chunk size should not be very large as model has a limit
-    chunk_size = 1000,
-    # this is a configurable value
-    chunk_overlap = 200,
-    length_function = _tiktoken_len,
-)
+    def add_file(self, path:str) -> None:
+        # detect format
+        file_ext = pathlib.Path(path).suffix
+        match str.lower(file_ext):
+            case ".pdf":
+                self.add_pdf(path)
+            case ".md":
+                self.add_markdown(path)
+            case ".pptx":
+                self.add_pptx(path)
+            case _:
+                self.add_text_file(path)
 
-def create_from_text(text:Literal) -> Chroma:
-    # chunk input into multiple documents
-    docs = text_splitter.create_documents([text])
-    return create(docs)
+    def add_markdown(self, markdown_path:str) -> None:
+        self.add_docs(UnstructuredMarkdownLoader(markdown_path).load())
 
-def create_from_text_file(text_path:str) -> Chroma:
-    loader = TextLoader(text_path)
-    docs = loader.load()
-    return create(docs)
+    def add_pdf(self, pdf_path:str) -> None:
+        self.add_docs(PyPDFLoader(pdf_path).load_and_split())
 
-def create_from_pdf(pdf_path:str) -> Chroma:
-    loader = PyPDFLoader(pdf_path)
-    docs = loader.load_and_split()
-    return create(docs)
+    def add_pptx(self, pptx_path:str) -> None:
+        self.add_docs(UnstructuredPowerPointLoader(pptx_path).load())
 
-def create_from_markdown(markdown_path:str) -> Chroma:
-    loader = UnstructuredMarkdownLoader(markdown_path)
-    docs = loader.load()
-    return create(docs)
+    def add_text(self, text:Literal) -> None:
+        # this splits the input text
+        text_splitter = RecursiveCharacterTextSplitter(
+            # chunk size should not be very large as model has a limit
+            chunk_size = 1000,
+            # this is a configurable value
+            chunk_overlap = 200,
+            length_function = _tiktoken_len,
+        )
+        # chunk input into multiple documents
+        self.add_docs(text_splitter.create_documents([text]))
 
-def create_from_pptx(pptx_path:str) -> Chroma:
-    loader = UnstructuredPowerPointLoader(pptx_path)
-    docs = loader.load()
-    return create(docs)
+    def add_text_file(self, text_path:str) -> None:
+        self.add_docs(TextLoader(text_path).load())
 
-def create_from_file(path:str) -> Chroma:
-    # detect format
-    file_ext = pathlib.Path(path).suffix
-    match str.lower(file_ext):
-        case ".pdf":
-            return create_from_pdf(path)
-        case ".md":
-            return create_from_markdown(path)
-        case ".pptx":
-            return create_from_pptx(path)
-        case _:
-            return create_from_text_file(path)
-        
-def load(persist_db_path:str) -> Chroma:
-    return Chroma(embedding_function=GPT4AllEmbeddings(), persist_directory=persist_db_path)
+    def as_retriever(self) -> VectorStoreRetriever:
+        return self._impl.as_retriever()
