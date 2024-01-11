@@ -1,0 +1,25 @@
+# Operating system generated files
+.DS_Store    # macOS specific files
+Thumbs.db    # Windows specific files
+*.swp        # Vim swap files
+
+# Editor/IDE specific files
+.vscode/     # VSCode project settings
+.idea/       # IntelliJ IDEA project settings
+*.sublime-*  # Sublime Text project files
+
+# Language specific files
+# For example, if you're working with Python:
+__pycache__/ # Python byte code cache
+*.pyc        # Compiled Python files
+
+# Build artifacts and dependencies
+/build/
+/dist/
+/node_modules/  # Node.js dependencies
+
+# Log files
+*.log
+
+# Environment files
+.env
