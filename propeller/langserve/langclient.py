@@ -21,7 +21,7 @@ HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 
 
-rag_runnable = RemoteRunnable("http://localhost:8000/")
+retrieval_runnable = RemoteRunnable("http://localhost:8000/")
 llm_runnable = RemoteRunnable("http://localhost:8001/mistral/")
 
 
@@ -38,7 +38,7 @@ prompt = ChatPromptTemplate(
         HumanMessagePromptTemplate.from_template("{question}"),
     ]
 )
-chain = {"context": rag_runnable | format_documents, "question": RunnablePassthrough()} | prompt| llm_runnable | StrOutputParser()
+chain = {"context": retrieval_runnable | format_documents, "question": RunnablePassthrough()} | prompt| llm_runnable | StrOutputParser()
 
 app = FastAPI(
     title="LangChain Server",
