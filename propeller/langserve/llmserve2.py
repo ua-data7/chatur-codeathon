@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """langserve that serves up our LLMs"""
+import argparse
 import os
 from fastapi import FastAPI
 from langchain.chat_models import ChatAnthropic, ChatOpenAI
@@ -9,8 +10,24 @@ from langchain_community.llms import Ollama
 from langserve import add_routes
 import sys
 
-HOST = sys.argv[1]
-PORT = int(sys.argv[2])
+
+def parse_args():
+    """
+    Parses command-line arguments.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--host",
+        help="The IP address of the interface to listen to.",
+        default="0.0.0.0"
+    )
+    parser.add_argument(
+        "--port",
+        help="The port number to listen to.",
+        default=8000,
+        type=int
+    )
+    return parser.parse_args()
 
 app = FastAPI(
     title="LangChain Server",
@@ -36,5 +53,5 @@ add_routes(
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(app, host=HOST, port=PORT)
+    args = parse_args()
+    uvicorn.run(app, host=args.host, port=args.port)
