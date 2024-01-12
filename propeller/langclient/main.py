@@ -34,7 +34,7 @@ async def call_llm_service(text:str):
 
     if response.status_code != 200:
         raise Exception("Error calling LLM!")
-    
+
     return response.json()
 
 
@@ -45,3 +45,4 @@ async def process_text(data: str):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

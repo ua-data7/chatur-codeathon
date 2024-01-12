@@ -166,3 +166,6 @@ Thumbs.db    # Windows specific files
 /build/
 /dist/
 /node_modules/  # Node.js dependencies
+
+# pyright
+pyrightconfig.json
