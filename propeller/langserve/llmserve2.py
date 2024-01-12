@@ -47,7 +47,7 @@ add_routes(
 
 add_routes(
     app,
-    ChatOpenAI(model="Mistral-7B-OpenOrca", base_url="http://chatur-api"),
+    ChatOpenAI(model="Mistral-7B-OpenOrca", base_url="http://chatur-api-server/v1"),
     path="/mistral",
 )
 
