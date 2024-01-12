@@ -16,14 +16,18 @@ from langchain_core.runnables import RunnablePassthrough
 from langserve import add_routes
 from fastapi import FastAPI
 import sys
+import os
 
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 
+retrieval_url = os.getenv("RETRIEVAL_URL", "http://localhost:8000/")
+llm_url = os.getenv("LLM_URL", "http://localhost:8001/mistral/")
+retrieval_runnable = RemoteRunnable(retrieval_url)
+llm_runnable = RemoteRunnable(llm_url)
 
-retrieval_runnable = RemoteRunnable("http://localhost:8000/")
-llm_runnable = RemoteRunnable("http://localhost:8001/mistral/")
-
+print("retrieval_url: {}".format(retrieval_url))
+print("llm_url: {}".format(llm_url))
 
 
 def format_documents(docs):
