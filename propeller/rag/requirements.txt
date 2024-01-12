@@ -5,3 +5,6 @@ tiktoken==0.5.2
 gpt4all==2.0.2
 chromadb==0.4.22
 pypdf==3.17.4
+webdavclient3==3.14.6
+langserve==0.0.39
+sse-starlette==1.8.2

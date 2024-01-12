@@ -13,9 +13,15 @@ from langchain_community.llms import Ollama
 from langchain.memory import ConversationBufferMemory
 
 from langchain_core.runnables import RunnablePassthrough
+from langserve import add_routes
+from fastapi import FastAPI
+import sys
+
+HOST = sys.argv[1]
+PORT = int(sys.argv[2])
 
 
-rag_runnable = RemoteRunnable("http://localhost:8000/")
+retrieval_runnable = RemoteRunnable("http://localhost:8000/")
 llm_runnable = RemoteRunnable("http://localhost:8001/mistral/")
 
 
@@ -32,8 +38,26 @@ prompt = ChatPromptTemplate(
         HumanMessagePromptTemplate.from_template("{question}"),
     ]
 )
-chain = {"context": rag_runnable | format_documents, "question": RunnablePassthrough()} | prompt| llm_runnable | StrOutputParser()
+chain = {"context": retrieval_runnable | format_documents, "question": RunnablePassthrough()} | prompt| llm_runnable | StrOutputParser()
 
-results = chain.invoke("Describe the three sides of the Fire Behavior Triangle?")
+app = FastAPI(
+    title="LangChain Server",
+    version="1.0",
+    description="Spin up a simple api server using Langchain's Runnable interfaces",
+)
 
-print(results)
+add_routes(
+    app,
+    chain,
+    path="/rag",
+)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host=HOST, port=PORT)
+
+
+# results = chain.invoke("Describe the three sides of the Fire Behavior Triangle?")
+
+# print(results)
