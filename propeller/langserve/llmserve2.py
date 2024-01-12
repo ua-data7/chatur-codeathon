@@ -18,11 +18,19 @@ app = FastAPI(
     description="Spin up a simple api server using Langchain's Runnable interfaces",
 )
 
-openai_key = os.getenv("OPENAI_API_KEY")
+#openai_key = os.getenv("OPENAI_API_KEY")
 
+"""
 add_routes(
     app,
     ChatOpenAI(model="Mistral-7B-OpenOrca", openai_api_key=openai_key, base_url="https://chatur-api.cyverse.ai/v1/"),
+    path="/mistral",
+)
+"""
+
+add_routes(
+    app,
+    ChatOpenAI(model="Mistral-7B-OpenOrca", base_url="http://chatur-api"),
     path="/mistral",
 )
 
