@@ -1,1 +1,2 @@
 langserve[all]==0.0.39
+openai==1.7.1
