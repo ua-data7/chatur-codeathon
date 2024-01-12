@@ -4,4 +4,4 @@ WORKDIR  /opt/langserve
 COPY . .
 RUN apt install -y gcc && \
     pip3 install -r requirements.txt
-ENTRYPOINT python3 /opt/langserve/server.py
+ENTRYPOINT python3 /opt/langserve/llmserve2.py
