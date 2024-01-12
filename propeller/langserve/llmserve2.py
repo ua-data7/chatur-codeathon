@@ -24,7 +24,8 @@ def parse_args():
     parser.add_argument(
         "--port",
         help="The port number to listen to.",
-        default="8000"
+        default=8000,
+        type=int
     )
     return parser.parse_args()
 
