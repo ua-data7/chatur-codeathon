@@ -1,4 +1,4 @@
-# -*- coding: <encoding name> -*-
+# -*- coding: utf-8 -*-
 
 """This module holds the vector database maintenance logic."""
 
