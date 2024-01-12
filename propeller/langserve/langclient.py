@@ -53,7 +53,7 @@ app = FastAPI(
 add_routes(
     app,
     chain,
-    path="/rag",
+    path="/langserve",
 )
 
 if __name__ == "__main__":
