@@ -12,6 +12,7 @@ Thumbs.db    # Windows specific files
 # For example, if you're working with Python:
 __pycache__/ # Python byte code cache
 *.pyc        # Compiled Python files
+.python-version
 
 # Build artifacts and dependencies
 /build/
