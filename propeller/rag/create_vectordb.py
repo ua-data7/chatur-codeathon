@@ -69,6 +69,12 @@ for root, dirs, files in os.walk(course_material_path, topdown=True):
     for file in files:
         # file
         fullpath = os.path.join(root, str(file))
+
+        if file.startswith("~"):
+            # ignore temp files
+            print("> ignore temp file '%s'" % fullpath)
+            continue
+        
         print("> adding '%s'" % fullpath)
         vectorstore.add_file(fullpath)
 
