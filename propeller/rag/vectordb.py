@@ -8,10 +8,15 @@ from typing import Optional, Literal
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.vectorstores import Chroma   # pylint: disable=no-name-in-module
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.document_loaders import UnstructuredMarkdownLoader
-from langchain_community.document_loaders import UnstructuredPowerPointLoader
-from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import (
+    PyPDFLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredPowerPointLoader,
+    TextLoader,
+    Docx2txtLoader,
+    UnstructuredExcelLoader
+)
+
 from langchain_core.vectorstores import VectorStoreRetriever
 
 import tiktoken
@@ -20,6 +25,7 @@ def _tiktoken_len(text):
     tokenizer = tiktoken.get_encoding("cl100k_base")
     tokens = tokenizer.encode(text)
     return len(tokens)
+
 
 class VectorDB:
     """
@@ -48,8 +54,12 @@ class VectorDB:
                 self.add_pdf(path)
             case ".md":
                 self.add_markdown(path)
-            case ".pptx":
+            case ".pptx" | ".ppt":
                 self.add_pptx(path)
+            case ".docx" | ".doc":
+                self.add_docx(path)
+            case ".xlsx" | ".xls":
+                self.add_xlsx(path)
             case _:
                 self.add_text_file(path)
 
@@ -79,6 +89,24 @@ class VectorDB:
           path  The path to the file on the local filesystem
         """
         self._add_docs(UnstructuredPowerPointLoader(pptx_path).load())
+
+    def add_docx(self, docx_path:str) -> None:
+        """
+        Adds a Word file to the vector store.
+
+        Params:
+          path  The path to the file on the local filesystem
+        """
+        self._add_docs(Docx2txtLoader(docx_path).load())
+
+    def add_xlsx(self, xlsx_path:str) -> None:
+        """
+        Adds a Excel file to the vector store.
+
+        Params:
+          path  The path to the file on the local filesystem
+        """
+        self._add_docs(UnstructuredExcelLoader(xlsx_path).load())
 
     def add_text(self, text:Literal) -> None:
         """
