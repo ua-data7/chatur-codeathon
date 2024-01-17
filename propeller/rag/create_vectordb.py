@@ -1,12 +1,9 @@
-import chain
-import sys
 import os
 import pathlib
 import shutil
 import argparse
 
 from vectordb import VectorDB
-from langchain_community.vectorstores import Chroma
 from webdav3.client import Client
 
 

@@ -1,30 +1,33 @@
+import os
 import chain
-import sys
+import argparse
 from vectordb import VectorDB
 
-from langchain_community.vectorstores import Chroma
+vectordb_root = "./vectordb"
 
-input_paths = sys.argv[1:]
-if len(input_paths) == 0:
-    # test data
-    input_paths = ["./rock_parrot.pdf"]
-    #print("give input file paths as arguments")
-    #exit(1)
 
-"""
-example question: "When was the rock parrot discovered?"
-"""
-vectorstore = VectorDB(None)
+parser = argparse.ArgumentParser(
+    prog='test_chat',
+    description='Chat about course materials')
 
-for input_path in input_paths:
-    print("> input: " + input_path)
-    vectorstore.add_file(input_path)
+parser.add_argument('course_number', help='course number')
+args = parser.parse_args()
 
+course_name = args.course_number.upper().strip()
+vectordb_path = os.path.join(vectordb_root, course_name)
+
+if not os.path.exists(vectordb_path):
+    print("failed to find vectordb for course %s" % course_name)
+    exit(1)
+
+vectorstore = VectorDB(vectordb_path)
 retriever = vectorstore.as_retriever()
 
 rag_chain = chain.make_chain(retriever)
 print("Enter question: ")
 question = input()
+
+print("\nAnswer: ")
 
 my_out = rag_chain.invoke(question)
 print("\n")

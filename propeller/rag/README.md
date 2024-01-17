@@ -11,7 +11,7 @@ Requires Ollama and Mistral model
 
 Run ollama locally in docker
 ```
-docker run -d -p 11434:11434 ollama/ollama --name ollama_cyverse
+docker run -d -p 11434:11434 --name ollama_cyverse ollama/ollama
 ```
 
 Download mistral model
