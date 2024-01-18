@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.10
 
 ARG HOST=127.0.0.1
 ARG PORT=8000
@@ -7,8 +7,8 @@ ARG VECTORSTORE=/opt/vectorstore
 RUN mkdir -p ${VECTORSTORE}
 
 WORKDIR  /opt/langserve
-COPY . .
-
+COPY ./requirements.txt .
 RUN apt install -y gcc && \
-    pip3 install -r requirements.langclient.txt
+    pip3 install -r requirements.txt
+COPY ./langclient.py ./vectordb.py ./
 CMD ["python3", "/opt/langserve/langclient.py", ${HOST}, ${PORT}, ${VECTORSTORE}]
