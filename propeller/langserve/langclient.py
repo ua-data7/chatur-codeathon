@@ -1,3 +1,4 @@
+
 from langserve import RemoteRunnable
 
 from langchain_core.output_parsers import StrOutputParser
@@ -11,38 +12,61 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.llms import Ollama
 
 from langchain.memory import ConversationBufferMemory
-
-from langchain_core.runnables import RunnablePassthrough
 from langserve import add_routes
-from fastapi import FastAPI
 import sys
 import os
+
+from langserve import CustomUserType
+
+from importlib import metadata
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, Request, Response
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from sse_starlette import EventSourceResponse
+
+from langserve import APIHandler
+from vectordb import VectorDB
 
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 
-retrieval_url = os.getenv("RETRIEVAL_URL", "http://localhost:8000/")
-llm_url = os.getenv("LLM_URL", "http://localhost:8001/mistral/")
-retrieval_runnable = RemoteRunnable(retrieval_url)
-llm_runnable = RemoteRunnable(llm_url)
+VECTORSTORE = os.getenv("VECTORSTORE_PATH", "~/vectordb")
 
-print("retrieval_url: {}".format(retrieval_url))
-print("llm_url: {}".format(llm_url))
-
+print("vectorstore: {}".format(VECTORSTORE))
 
 def format_documents(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+    out_docs = "\n".join(doc.page_content for doc in docs)
+    print(out_docs)
+    return out_docs
 
 # Prompt
-prompt = ChatPromptTemplate(
-    messages=[
-        SystemMessagePromptTemplate.from_template(
-            "Using the following documents, help answer questions as a teacher would help a student. Remember to only answer the question they asked: {context}"
-        ),
-        HumanMessagePromptTemplate.from_template("{question}"),
-    ]
+prompt = ChatPromptTemplate.from_messages([
+    SystemMessagePromptTemplate.from_template(
+        "Using the following documents, help answer questions as a teacher would help a student. Remember to only answer the question they asked: {context}"
+    ),
+    HumanMessagePromptTemplate.from_template("{question}"),
+])
+
+
+class Question(CustomUserType):
+    question: str
+    context: list
+
+
+llm = Ollama(
+    model="mistral",
 )
-chain = {"context": retrieval_runnable | format_documents, "question": RunnablePassthrough()} | prompt| llm_runnable | StrOutputParser()
+
+vectorstore = VectorDB("/home/neddy/vectordb")
+retriever = vectorstore.as_retriever()
+
+chain = (
+    {"context": retriever | format_documents, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
+)
 
 app = FastAPI(
     title="LangChain Server",
@@ -50,11 +74,7 @@ app = FastAPI(
     description="Spin up a simple api server using Langchain's Runnable interfaces",
 )
 
-add_routes(
-    app,
-    chain,
-    path="/langserve",
-)
+add_routes(app, chain, path="/langserve")
 
 if __name__ == "__main__":
     import uvicorn
@@ -62,6 +82,13 @@ if __name__ == "__main__":
     uvicorn.run(app, host=HOST, port=PORT)
 
 
-# results = chain.invoke("Describe the three sides of the Fire Behavior Triangle?")
-
-# print(results)
+##########
+# to use #
+##########
+### POST /langserve/invoke
+### json params:
+### {
+###   "input": "User question goes here.",
+###   "config": {},
+###   "kwargs": {}
+### }
