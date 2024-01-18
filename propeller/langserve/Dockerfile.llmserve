@@ -1,11 +1,12 @@
 FROM python:3
 
 WORKDIR  /opt/langserve
-COPY . .
+COPY ./requirements.txt .
 RUN apt install -y gcc && \
     pip3 install -r requirements.txt
+COPY . .
 
 # Importing the OpenAI library requires an API key in this environment variable. This one is fake.
 ENV OPENAI_API_KEY=notreal
 
-ENTRYPOINT python3 /opt/langserve/llmserve2.py
+ENTRYPOINT python3 /opt/langserve/llmserve.py

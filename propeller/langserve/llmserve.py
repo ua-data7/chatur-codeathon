@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-"""langserve that serves up our LLMs"""
+"""
+NOTE: This is not needed now, since we will integrate LLM in the same service that runs the user-facing langserve.
+
+langserve that serves up our LLMs
+"""
 import argparse
 import os
 from fastapi import FastAPI
