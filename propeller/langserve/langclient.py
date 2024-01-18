@@ -58,7 +58,7 @@ llm = Ollama(
     model="mistral",
 )
 
-vectorstore = VectorDB("/home/neddy/vectordb")
+vectorstore = VectorDB(VECTORSTORE)
 retriever = vectorstore.as_retriever()
 
 chain = (
