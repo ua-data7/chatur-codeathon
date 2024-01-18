@@ -60,6 +60,8 @@ class VectorDB:
                 self.add_docx(path)
             case ".xlsx" | ".xls":
                 self.add_xlsx(path)
+            case ".png" | ".jpg" | ".jpeg" | ".gif" | ".tiff":
+                print("ignore image file (%s)" % path)
             case _:
                 self.add_text_file(path)
 
