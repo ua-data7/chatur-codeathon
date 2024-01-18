@@ -1,31 +1,30 @@
-"""
-This runs langserve with fastapi to serve a REST api that expose the chain (RAG + LLM).
-
-Environment variables:
-LLM_MODEL_NAME: name of the LLM model to use
-OPENAI_API_URL: url of the openai api
-
-"""
-from langserve import add_routes
-from langserve import CustomUserType
-
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-# from langchain_community.llms import Ollama
-from langchain_openai import ChatOpenAI
-from fastapi import FastAPI
+from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_community.llms import Ollama
 
-from vectordb import VectorDB
-
+from langchain.memory import ConversationBufferMemory
+from langserve import add_routes
 import sys
 import os
 
-# Host and port for fastapi to listen to
+from langserve import CustomUserType
+
+from importlib import metadata
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, Request, Response
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from sse_starlette import EventSourceResponse
+
+from langserve import APIHandler
+from vectordb import VectorDB
+
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 VECTORSTORE = sys.argv[3]
@@ -51,12 +50,9 @@ class Question(CustomUserType):
     context: list
 
 
-# llm = Ollama(
-#     model="mistral",
-# )
-LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "Mistral-7B-OpenOrca")
-OPENAI_API_URL = os.getenv("OPENAI_API_URL", "http://chatur-api-server/v1")
-llm = ChatOpenAI(model=LLM_MODEL_NAME, base_url=OPENAI_API_URL)
+llm = Ollama(
+    model="mistral",
+)
 
 vectorstore = VectorDB(VECTORSTORE)
 retriever = vectorstore.as_retriever()
