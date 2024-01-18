@@ -37,12 +37,25 @@ curl --location --request POST 'http://localhost:8000/joke/invoke'     --header 
     }'
 ```
 
-## Docker build
+## Docker
+
+You will need to run ollama separately.
+
+build
 ```
 docker build -t cyverse/chatur-langserve -f Dockerfile.langserve .
 ```
 
-## Docker run
+run
 ```
 ocker run -ti -p 8000:8000 cyverse/chatur-langserve
+```
+
+## Docker-compose
+
+build and run
+```
+docker compose --file docker-compose.yml --project-name "chatur" build
+docker compose --file docker-compose.yml --project-name "chatur" up -d
+docker compose --file docker-compose.yml --project-name "chatur" exec ollama ollama pull mistral
 ```

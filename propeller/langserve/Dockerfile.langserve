@@ -6,6 +6,7 @@ COPY . .
 ENV HOST=0.0.0.0
 ENV PORT=8000
 ENV VECTORSTORE=/opt/vectorstore
+ENV OLLAMA_HOST=localhost
 
 RUN mkdir -p ${VECTORSTORE}
 
@@ -17,4 +18,4 @@ RUN pip3 install --upgrade pip && \
 
 EXPOSE ${PORT}
 
-ENTRYPOINT ["/bin/bash", "-c", "python3 /opt/langserve/langclient.py ${HOST} ${PORT} ${VECTORSTORE}"]
+ENTRYPOINT ["/bin/bash", "-c", "python3 /opt/langserve/langclient.py ${HOST} ${PORT} ${VECTORSTORE} ${OLLAMA_HOST}"]

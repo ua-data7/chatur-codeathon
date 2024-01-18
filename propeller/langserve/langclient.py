@@ -28,8 +28,10 @@ from vectordb import VectorDB
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 VECTORSTORE = sys.argv[3]
+OLLAMA_HOST = sys.argv[4]
 
-print("vectorstore: {}".format(VECTORSTORE))
+print("vectorstore: %s, ollama_host: %s" % (VECTORSTORE, OLLAMA_HOST))
+
 
 def format_documents(docs):
     out_docs = "\n".join(doc.page_content for doc in docs)
@@ -51,6 +53,7 @@ class Question(CustomUserType):
 
 
 llm = Ollama(
+    base_url="http://%s:11434" % OLLAMA_HOST,
     model="mistral",
 )
 
