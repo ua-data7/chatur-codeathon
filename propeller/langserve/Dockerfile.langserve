@@ -15,4 +15,6 @@ RUN apt update && \
 RUN pip3 install --upgrade pip && \
     pip3 install -r requirements.langclient.txt
 
+EXPOSE ${PORT}
+
 ENTRYPOINT ["/bin/bash", "-c", "python3 /opt/langserve/langclient.py ${HOST} ${PORT} ${VECTORSTORE}"]

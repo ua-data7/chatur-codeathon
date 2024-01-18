@@ -22,7 +22,7 @@ Usage:
 1. Calling OpenAI's Q/A API
 
 ```
-    curl --location --request POST 'http://localhost:8000/openai/invoke'     --header 'Content-Type: application/json'     --data-raw '{
+    curl --location --request POST 'http://localhost:8000/langserve/invoke'     --header 'Content-Type: application/json'     --data-raw '{
         "input": "Tell me something about University of Arizona"
     }'
 ```
