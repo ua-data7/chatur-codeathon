@@ -30,7 +30,7 @@ Usage:
 2. Calling the "Tell me a joke" route with "topic" as input
 
 ```
-url --location --request POST 'http://localhost:8000/joke/invoke'     --header 'Content-Type: application/json'     --data-raw '{
+curl --location --request POST 'http://localhost:8000/joke/invoke'     --header 'Content-Type: application/json'     --data-raw '{
         "input": {
             "topic": "cats"
         }
