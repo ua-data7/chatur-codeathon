@@ -36,3 +36,8 @@ url --location --request POST 'http://localhost:8000/joke/invoke'     --header '
         }
     }'
 ```
+
+## Docker build
+```
+docker build -t cyverse/chatur-langserve -f Dockerfile.langserve .
+```
