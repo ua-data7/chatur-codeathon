@@ -30,8 +30,7 @@ from vectordb import VectorDB
 
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
-
-VECTORSTORE = os.getenv("VECTORSTORE_PATH", "~/vectordb")
+VECTORSTORE = sys.argv[3]
 
 print("vectorstore: {}".format(VECTORSTORE))
 
