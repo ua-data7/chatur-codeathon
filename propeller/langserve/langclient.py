@@ -55,6 +55,7 @@ class Question(CustomUserType):
 llm = Ollama(
     base_url="http://%s:11434" % OLLAMA_HOST,
     model="mistral",
+    callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
 )
 
 vectorstore = VectorDB(VECTORSTORE)
