@@ -8,10 +8,11 @@ from webdav3.client import Client
 
 
 scratch_root = "./scratch"
+scratch_inter_root = "./scratch_intermediate"
 vectordb_root = "./vectordb"
 webdav_options = {
     'webdav_hostname': "https://data.cyverse.org",
-    'webdav_login':    "iychoi",
+    'webdav_login':    "anonymous",
     'webdav_password': ""
 }
 
@@ -44,6 +45,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--no_download', action='store_true', help='do not download data')
 parser.add_argument('--no_delete', action='store_true', help='do not delete data')
+parser.add_argument('--create_docs', action='store_true', help='create intermediate docs')
 parser.add_argument('course_number', help='course number')
 args = parser.parse_args()
 
@@ -51,6 +53,10 @@ course_name = args.course_number.upper().strip()
 
 if not os.path.exists(vectordb_root):
     os.mkdir(vectordb_root)
+
+if args.create_docs:
+    if not os.path.exists(scratch_inter_root):
+        os.mkdir(scratch_inter_root)
 
 print("create vectordb")
 vectordb_path = os.path.join(vectordb_root, course_name)
@@ -61,11 +67,18 @@ vectorstore = VectorDB(vectordb_path)
 course_material_path = download_course_resource_webdav(course_name, no_download=args.no_download)
 course_material = pathlib.Path(course_material_path)
 
+intermedate_doc_output_path = os.path.join(scratch_inter_root, course_name)
+intermedate_doc_output_path = os.path.abspath(intermedate_doc_output_path)
+
 print("adding class materials for %s" % course_name)
 for root, dirs, files in os.walk(course_material_path, topdown=True):
     for file in files:
         # file
         fullpath = os.path.join(root, str(file))
+        relpath = os.path.relpath(fullpath, course_material_path)
+
+        docpath = os.path.join(intermedate_doc_output_path, relpath)
+        docpath = docpath + ".dump"
 
         if file.startswith("~"):
             # ignore temp files
@@ -73,7 +86,17 @@ for root, dirs, files in os.walk(course_material_path, topdown=True):
             continue
         
         print("> adding '%s'" % fullpath)
-        vectorstore.add_file(fullpath)
+
+        if args.create_docs:
+            print("> intermediate output '%s'" % docpath)
+
+            docdir = os.path.dirname(docpath)
+            if not os.path.exists(docdir):
+                os.mkdir(docdir)
+
+            vectorstore.add_file(fullpath, docpath)
+        else:
+            vectorstore.add_file(fullpath)
 
 
 if not args.no_delete:

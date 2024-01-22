@@ -3,8 +3,10 @@
 """This module holds the vector database maintenance logic."""
 
 import pathlib
-from typing import Optional, Literal
+import json 
+from typing import Optional, Literal, List
 
+from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.vectorstores import Chroma   # pylint: disable=no-name-in-module
@@ -39,7 +41,18 @@ class VectorDB:
         self._db_path = db_path
         self._impl = Chroma(embedding_function=GPT4AllEmbeddings(), persist_directory=db_path)
 
-    def add_file(self, path:str) -> None:
+    def _dump_docs(self, docs:List[Document], doc_output_path:str):
+        with open(doc_output_path, "w") as f:
+                for docid, doc in enumerate(docs):
+                    f.write("==== doc %d ====\n" % docid)
+                    f.write("[metadata]\n")
+                    f.write(json.dumps(doc.metadata))
+                    f.write("\n\n")
+                    f.write("[content]\n")
+                    f.write(doc.page_content)
+                    f.write("\n\n")
+
+    def add_file(self, path:str, doc_output_path:Optional[str]) -> None:
         """
         Adds a file to the vector store. It will use the file's extension to
         determine the type of file.
@@ -53,7 +66,7 @@ class VectorDB:
             case ".pdf":
                 self.add_pdf(path)
             case ".md":
-                self.add_markdown(path)
+                self.add_markdown(path, doc_output_path)
             case ".pptx" | ".ppt":
                 self.add_pptx(path)
             case ".docx" | ".doc":
@@ -65,52 +78,72 @@ class VectorDB:
             case _:
                 self.add_text_file(path)
 
-    def add_markdown(self, markdown_path:str) -> None:
+    def add_markdown(self, markdown_path:str, doc_output_path:Optional[str]) -> None:
         """
         Adds a markdown file to the vector store.
 
         Params:
-          path  The path to the file on the local filesystem
+          markdown_path  The path to the file on the local filesystem
         """
-        self._add_docs(UnstructuredMarkdownLoader(markdown_path).load())
+        docs = UnstructuredMarkdownLoader(markdown_path).load()
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
 
-    def add_pdf(self, pdf_path:str) -> None:
+        self._add_docs(docs)
+
+    def add_pdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
         """
         Adds a PDF file to the vector store.
 
         Params:
-          path  The path to the file on the local filesystem
+          doc_output_path  The path to the file on the local filesystem
         """
-        self._add_docs(PyPDFLoader(pdf_path).load_and_split())
+        docs = PyPDFLoader(pdf_path).load_and_split()
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
 
-    def add_pptx(self, pptx_path:str) -> None:
+        self._add_docs(docs)
+
+    def add_pptx(self, pptx_path:str, doc_output_path:Optional[str]) -> None:
         """
         Adds a PowerPoint file to the vector store.
 
         Params:
           path  The path to the file on the local filesystem
         """
-        self._add_docs(UnstructuredPowerPointLoader(pptx_path).load())
+        docs = UnstructuredPowerPointLoader(pptx_path).load()
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
 
-    def add_docx(self, docx_path:str) -> None:
+        self._add_docs(docs)
+
+    def add_docx(self, docx_path:str, doc_output_path:Optional[str]) -> None:
         """
         Adds a Word file to the vector store.
 
         Params:
           path  The path to the file on the local filesystem
         """
-        self._add_docs(Docx2txtLoader(docx_path).load())
+        docs = Docx2txtLoader(docx_path).load()
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
 
-    def add_xlsx(self, xlsx_path:str) -> None:
+        self._add_docs(docs)
+
+    def add_xlsx(self, xlsx_path:str, doc_output_path:Optional[str]) -> None:
         """
         Adds a Excel file to the vector store.
 
         Params:
           path  The path to the file on the local filesystem
         """
-        self._add_docs(UnstructuredExcelLoader(xlsx_path).load())
+        docs = UnstructuredExcelLoader(xlsx_path).load()
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
 
-    def add_text(self, text:Literal) -> None:
+        self._add_docs(docs)
+
+    def add_text(self, text:Literal, doc_output_path:Optional[str]) -> None:
         """
         Adds a block of text to the vector store.
 
@@ -125,17 +158,25 @@ class VectorDB:
             chunk_overlap = 200,
             length_function = _tiktoken_len,
         )
-        # chunk input into multiple documents
-        self._add_docs(text_splitter.create_documents([text]))
 
-    def add_text_file(self, text_path:str) -> None:
+        docs = text_splitter.create_documents([text])
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
+
+        self._add_docs(docs)
+
+    def add_text_file(self, text_path:str, doc_output_path:Optional[str]) -> None:
         """
         Adds a text file of unknown type to the vector store.
 
         Params:
           path  The path to the file on the local filesystem
         """
-        self._add_docs(TextLoader(text_path).load())
+        docs = TextLoader(text_path).load()
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
+
+        self._add_docs(docs)
 
     def _add_docs(self, docs):
         self._impl = Chroma.from_documents(
