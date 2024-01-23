@@ -3,7 +3,7 @@
 """This module holds the vector database maintenance logic."""
 
 import pathlib
-import json 
+import json
 import os
 from typing import Optional, Literal, List
 
@@ -64,7 +64,7 @@ class VectorDB:
             if not doc.page_content:
                 # empty
                 removed.append(doc)
-        
+
         for doc in removed:
             docs.remove(doc)
 
@@ -75,7 +75,7 @@ class VectorDB:
                 # is array
                 doc.metadata[k] = ", ".join(v)
 
-    def add_file(self, path:str, doc_output_path:Optional[str]) -> None:
+    def add_file(self, path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a file to the vector store. It will use the file's extension to
         determine the type of file.
@@ -116,13 +116,13 @@ class VectorDB:
             ("##", "Header 2"),
             ("###", "Header 3"),
         ]
-        
+
         markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
         filecontent = pathlib.Path(markdown_path).read_text()
 
         docs = markdown_splitter.split_text(filecontent)
         self._make_doc_safe(docs)
-        
+
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
