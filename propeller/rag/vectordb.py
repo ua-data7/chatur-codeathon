@@ -4,6 +4,7 @@
 
 import pathlib
 import json 
+import os
 from typing import Optional, Literal, List
 
 from langchain_core.documents import Document
@@ -20,7 +21,6 @@ from langchain_community.document_loaders import (
 )
 
 from langchain.text_splitter import MarkdownHeaderTextSplitter
-
 from langchain_core.vectorstores import VectorStoreRetriever
 
 import tiktoken
@@ -44,6 +44,9 @@ class VectorDB:
         self._impl = Chroma(embedding_function=GPT4AllEmbeddings(), persist_directory=db_path)
 
     def _dump_docs(self, docs:List[Document], doc_output_path:str):
+        docdir = os.path.dirname(doc_output_path)
+        os.makedirs(docdir, exist_ok=True)
+
         with open(doc_output_path, "w") as f:
                 for docid, doc in enumerate(docs):
                     f.write("==== doc %d ====\n" % docid)
@@ -54,17 +57,23 @@ class VectorDB:
                     f.write(doc.page_content)
                     f.write("\n\n")
 
-    def _make_meta_safe(self, meta:dict) -> dict:
-        new_meta = dict()
-        for k in meta:
-            v = meta[k]
+    def _make_doc_safe(self, docs:List[Document]):
+        removed = []
+        for doc in docs:
+            self._make_meta_safe(doc)
+            if not doc.page_content:
+                # empty
+                removed.append(doc)
+        
+        for doc in removed:
+            docs.remove(doc)
+
+    def _make_meta_safe(self, doc:Document):
+        for k in doc.metadata:
+            v = doc.metadata[k]
             if isinstance(v, list):
                 # is array
-                new_meta[k] = ", ".join(v)
-            else:
-                new_meta[k] = v
-
-        return new_meta
+                doc.metadata[k] = ", ".join(v)
 
     def add_file(self, path:str, doc_output_path:Optional[str]) -> None:
         """
@@ -78,19 +87,19 @@ class VectorDB:
         file_ext = pathlib.Path(path).suffix
         match str.lower(file_ext):
             case ".pdf":
-                self.add_pdf(path)
+                self.add_pdf(path, doc_output_path)
             case ".md":
                 self.add_markdown(path, doc_output_path)
             case ".pptx" | ".ppt":
-                self.add_pptx(path)
+                self.add_pptx(path, doc_output_path)
             case ".docx" | ".doc":
-                self.add_docx(path)
+                self.add_docx(path, doc_output_path)
             case ".xlsx" | ".xls":
-                self.add_xlsx(path)
+                self.add_xlsx(path, doc_output_path)
             case ".png" | ".jpg" | ".jpeg" | ".gif" | ".tiff":
                 print("ignore image file (%s)" % path)
             case _:
-                self.add_text_file(path)
+                self.add_text_file(path, doc_output_path)
 
     def add_markdown(self, markdown_path:str, doc_output_path:Optional[str]) -> None:
         """
@@ -99,8 +108,6 @@ class VectorDB:
         Params:
           markdown_path  The path to the file on the local filesystem
         """
-        #docs = UnstructuredMarkdownLoader(markdown_path, mode="elements").load()
-
         headers_to_split_on = [
             ("#", "Header 1"),
             ("##", "Header 2"),
@@ -111,10 +118,8 @@ class VectorDB:
         filecontent = pathlib.Path(markdown_path).read_text()
 
         docs = markdown_splitter.split_text(filecontent)
-
-        for doc in docs:
-            doc.metadata = self._make_meta_safe(doc.metadata)
-
+        self._make_doc_safe(docs)
+        
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
@@ -128,8 +133,7 @@ class VectorDB:
           pdf_path  The path to the file on the local filesystem
         """
         docs = PyPDFLoader(pdf_path).load_and_split()
-        for doc in docs:
-            doc.metadata = self._make_meta_safe(doc.metadata)
+        self._make_doc_safe(docs)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
@@ -143,9 +147,8 @@ class VectorDB:
         Params:
           pptx_path  The path to the file on the local filesystem
         """
-        docs = UnstructuredPowerPointLoader(pptx_path).load()
-        for doc in docs:
-            doc.metadata = self._make_meta_safe(doc.metadata)
+        docs = UnstructuredPowerPointLoader(pptx_path, mode="elements").load()
+        self._make_doc_safe(docs)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
@@ -160,8 +163,7 @@ class VectorDB:
           docx_path  The path to the file on the local filesystem
         """
         docs = Docx2txtLoader(docx_path).load()
-        for doc in docs:
-            doc.metadata = self._make_meta_safe(doc.metadata)
+        self._make_doc_safe(docs)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
@@ -176,8 +178,7 @@ class VectorDB:
           xlsx_path  The path to the file on the local filesystem
         """
         docs = UnstructuredExcelLoader(xlsx_path).load()
-        for doc in docs:
-            doc.metadata = self._make_meta_safe(doc.metadata)
+        self._make_doc_safe(docs)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
@@ -201,8 +202,7 @@ class VectorDB:
         )
 
         docs = text_splitter.create_documents([text])
-        for doc in docs:
-            doc.metadata = self._make_meta_safe(doc.metadata)
+        self._make_doc_safe(docs)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
@@ -217,8 +217,7 @@ class VectorDB:
           text_path  The path to the file on the local filesystem
         """
         docs = TextLoader(text_path).load()
-        for doc in docs:
-            doc.metadata = self._make_meta_safe(doc.metadata)
+        self._make_doc_safe(docs)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)

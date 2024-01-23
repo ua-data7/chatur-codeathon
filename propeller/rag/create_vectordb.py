@@ -22,8 +22,7 @@ webdav_course_material_root = "/dav/iplant/projects/chatur/courses"
 def download_course_resource_webdav(course_name:str, no_download:bool) -> str:
     webdav_client = Client(webdav_options)
     
-    if not os.path.exists(scratch_root):
-        os.mkdir(scratch_root)
+    os.makedirs(scratch_root, exist_ok=True)
 
     url_path = os.path.join(webdav_course_material_root, course_name)
     target_path = os.path.join(scratch_root, course_name)
@@ -51,12 +50,11 @@ args = parser.parse_args()
 
 course_name = args.course_number.upper().strip()
 
-if not os.path.exists(vectordb_root):
-    os.mkdir(vectordb_root)
+os.makedirs(vectordb_root, exist_ok=True)
 
 if args.create_docs:
-    if not os.path.exists(scratch_inter_root):
-        os.mkdir(scratch_inter_root)
+    os.makedirs(scratch_inter_root, exist_ok=True)
+        
 
 print("create vectordb")
 vectordb_path = os.path.join(vectordb_root, course_name)
@@ -89,11 +87,6 @@ for root, dirs, files in os.walk(course_material_path, topdown=True):
 
         if args.create_docs:
             print("> intermediate output '%s'" % docpath)
-
-            docdir = os.path.dirname(docpath)
-            if not os.path.exists(docdir):
-                os.mkdir(docdir)
-
             vectorstore.add_file(fullpath, docpath)
         else:
             vectorstore.add_file(fullpath)
