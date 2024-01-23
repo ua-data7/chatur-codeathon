@@ -17,5 +17,9 @@ services:
     hostname: "langserve"
     ports:
       - "8000:8000"
+    volumes:
+      - type: bind
+        source: ./vectordb/CYVERSE
+        target: /opt/vectorstore
     depends_on:
       - ollama
