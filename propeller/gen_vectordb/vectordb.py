@@ -95,11 +95,14 @@ class VectorDB:
             case ".docx" | ".doc":
                 self.add_docx(path, doc_output_path)
             case ".xlsx" | ".xls":
-                self.add_xlsx(path, doc_output_path)
+                #self.add_xlsx(path, doc_output_path)
+                print("ignore microsoft excel file (%s)" % path)
             case ".png" | ".jpg" | ".jpeg" | ".gif" | ".tiff":
                 print("ignore image file (%s)" % path)
-            case _:
+            case ".txt":
                 self.add_text_file(path, doc_output_path)
+            case _:
+                print("ignore unknown file (%s)" % path)
 
     def add_markdown(self, markdown_path:str, doc_output_path:Optional[str]) -> None:
         """
