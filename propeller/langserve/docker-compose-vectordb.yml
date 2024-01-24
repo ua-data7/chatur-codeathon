@@ -19,7 +19,7 @@ services:
       - "8000:8000"
     volumes:
       - type: bind
-        source: ./vectordb/CYVERSE
+        source: ./vectordb/RNR355
         target: /opt/vectorstore
     depends_on:
       - ollama
