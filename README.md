@@ -49,7 +49,7 @@ then pass your question to the chatbot as input in:
 
 
 
-** If you make some changes to the DB or code, and want to rebuild it use `--no_download`
+** Now after you have everything working, if you make some changes to the DB or code, and want to rebuild it use `--no_download`
 
 i.e 
 ```python3 create_vectordb.py --no_download --create_docs RNR355 ```
