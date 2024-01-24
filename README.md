@@ -17,17 +17,19 @@ BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
 PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
 UBUNTU_CODENAME=jammy
 ```
-##Steps (Note:These instructions won't work on an Apple m1 mac.)
+##Steps (Note:These instructions won't work on an Apple m1 mac. Also please use a conda environment with python 3.10)
   
 - Install docker with  [docker compose](https://docs.docker.com/compose/install/).
 ```- git clone https://github.com/ua-data7/chatur-codeathon
-- - cd ~/chatur-codeathon/propeller/gen_vectordb
-- vi create_vectordb.py ((and add your cyverse username and password inside the code)
-- python3 create_vectordb.py --create_docs RNR355
-- cd ../langserve
-- curl https://ollama.ai/install.sh | sh
+- cd ~/chatur-codeathon/propeller/langserve
 - pip install -r requirements.txt
 - pip install -r requirements.langclient.txt
+- cd ~/chatur-codeathon/propeller/gen_vectordb
+- vi create_vectordb.py ((and add your cyverse username and password inside the code)
+- python3 create_vectordb.py --create_docs RNR355
+
+- curl https://ollama.ai/install.sh | sh
+
 - sudo apt install jq
 - sudo apt install libreoffice
 - docker compose --file docker-compose.yml --project-name "chatur" build
