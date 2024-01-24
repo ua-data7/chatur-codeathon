@@ -32,7 +32,7 @@ UBUNTU_CODENAME=jammy
 
 - sudo apt install jq
 - sudo apt install libreoffice
-# nowcopy vectordb folder under langserve from gen_vectordb/
+# now manually move gen_vectordb/vectordb folder to langserve/vectordb
 - cd ~/chatur-codeathon/propeller/langserve
 - docker compose --file docker-compose-vectordb.yml --project-name "chatur" build
 - docker compose --file docker-compose-vectordb.yml --project-name "chatur" up -d
