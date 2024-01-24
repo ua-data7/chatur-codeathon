@@ -32,6 +32,7 @@ UBUNTU_CODENAME=jammy
 
 - sudo apt install jq
 - sudo apt install libreoffice
+- cd ~/chatur-codeathon/propeller/langserve
 - docker compose --file docker-compose.yml --project-name "chatur" build
 - docker compose --file docker-compose.yml --project-name "chatur" up -d
 - docker compose --file docker-compose.yml --project-name "chatur" exec ollama ollama pull mistral
