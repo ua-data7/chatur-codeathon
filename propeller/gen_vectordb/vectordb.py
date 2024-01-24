@@ -26,7 +26,6 @@ from langchain_community.document_loaders import (
     UnstructuredExcelLoader
 )
 
-from langchain_experimental.text_splitter import SemanticChunker
 from langchain.text_splitter import MarkdownHeaderTextSplitter
 from langchain_core.vectorstores import VectorStoreRetriever
 
