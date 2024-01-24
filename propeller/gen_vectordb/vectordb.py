@@ -6,21 +6,17 @@ import pathlib
 import json
 import os
 import tempfile
-import subprocess
 from typing import Optional, Literal, List
 
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import (
-    GPT4AllEmbeddings,
-    OpenAIEmbeddings
+    GPT4AllEmbeddings
 )
 
 from langchain_community.vectorstores import Chroma   # pylint: disable=no-name-in-module
 from langchain_community.document_loaders import (
     PyPDFLoader,
-    #UnstructuredMarkdownLoader,
-    #UnstructuredPDFLoader,
     PDFMinerLoader,
     PyPDFium2Loader,
     PyMuPDFLoader,
@@ -37,6 +33,7 @@ from langchain_core.vectorstores import VectorStoreRetriever
 import tiktoken
 import pptx2md
 from pptx2md.global_var import g as pptx2md_g
+import mammoth
 
 
 def _tiktoken_len(text):
@@ -164,7 +161,7 @@ class VectorDB:
         - _add_pdf_pymupdf
         """
         return self._add_pdf_pypdf(pdf_path=pdf_path, doc_output_path=doc_output_path)
-
+    
     def _add_pdf_pypdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
         docs = PyPDFLoader(pdf_path).load_and_split()
         self._make_doc_safe(docs)
@@ -232,12 +229,6 @@ class VectorDB:
         return self._add_pptx_pptx2md(pptx_path=pptx_path, doc_output_path=doc_output_path)
 
     def _add_pptx_pptx2md(self, pptx_path:str, doc_output_path:Optional[str]) -> None:
-        """
-        Adds a PowerPoint file to the vector store.
-
-        Params:
-          pptx_path  The path to the file on the local filesystem
-        """
         try:
             pptx2md_g.disable_image = True
             pptx2md_g.disable_wmf = True
@@ -249,19 +240,13 @@ class VectorDB:
             md_out = pptx2md.outputter.md_outputter(temp_path)
             pptx2md.parse(prs, md_out)
             self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path)
-            
+
             os.remove(temp_path)
         except:
             # fail to convert to markdown
             self._add_pptx_unstructured(ppt_path=pptx_path, doc_output_path=doc_output_path)
 
     def _add_pptx_unstructured(self, ppt_path:str, doc_output_path:Optional[str]) -> None:
-        """
-        Adds a PowerPoint file to the vector store.
-
-        Params:
-          ppt_path  The path to the file on the local filesystem
-        """
         docs = UnstructuredPowerPointLoader(ppt_path).load()
         self._make_doc_safe(docs)
 
@@ -277,13 +262,45 @@ class VectorDB:
         Params:
           docx_path  The path to the file on the local filesystem
         """
+        
+        """
+        use one of these
+        - _add_docx_docx2txt
+        - _add_docx_mammoth (not reliable)
+        """
+        return self._add_docx_docx2txt(docx_path=docx_path, doc_output_path=doc_output_path)
+
+    def _add_docx_docx2txt(self, docx_path:str, doc_output_path:Optional[str]) -> None:
         docs = Docx2txtLoader(docx_path).load()
+
+        # this splits the input text
+        text_splitter = RecursiveCharacterTextSplitter(
+            # chunk size should not be very large as model has a limit
+            chunk_size = 1000,
+            # this is a configurable value
+            chunk_overlap = 200,
+            length_function = _tiktoken_len,
+        )
+
+        docs = text_splitter.split_documents(docs)
         self._make_doc_safe(docs)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
+
+    def _add_docx_mammoth(self, docx_path:str, doc_output_path:Optional[str]) -> None:
+        with open(docx_path, "rb") as docx_f:
+            md_out = mammoth.convert_to_markdown(docx_f)
+            
+        temp_path = tempfile.mktemp()
+        with open(temp_path, "w") as temp_f:
+            temp_f.write(md_out.value)
+
+        self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path)
+
+        os.remove(temp_path)
 
     def add_xlsx(self, xlsx_path:str, doc_output_path:Optional[str]) -> None:
         """
