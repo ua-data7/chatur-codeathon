@@ -29,10 +29,11 @@ UBUNTU_CODENAME=jammy
 - pip install -r requirements.txt
 - pip install -r requirements.langclient.txt
 - sudo apt install jq
+- sudo apt install libreoffice
 - cd /chatur-codeathon/propeller/gen_vectordb
 - vi create_vectordb.py (and add your cyverse username and password)
 - python3 create_vectordb.py --create_docs RNR355
-- pass your question to the chatbot as
+- pass your question to the chatbot as input in:
 - curl -sX POST http://localhost:8000/langserve/invoke -H 'Content-Type: application/json' --data-raw '{"input":"When does the class meet?"}' | jq
 
 
