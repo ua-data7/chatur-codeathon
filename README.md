@@ -20,7 +20,7 @@ UBUNTU_CODENAME=jammy
 **Steps (Note:These instructions won't work on an Apple m1 mac.)
   
 - Install docker with  [docker compose](https://docs.docker.com/compose/install/).
-- git clone https://github.com/ua-data7/chatur-codeathon
+```- git clone https://github.com/ua-data7/chatur-codeathon
 - cd propeller/langserve
 - docker compose --file docker-compose.yml --project-name "chatur" build
 - docker compose --file docker-compose.yml --project-name "chatur" up -d
@@ -31,9 +31,21 @@ UBUNTU_CODENAME=jammy
 - sudo apt install jq
 - sudo apt install libreoffice
 - cd /chatur-codeathon/propeller/gen_vectordb
-- vi create_vectordb.py (and add your cyverse username and password)
-- python3 create_vectordb.py --create_docs RNR355
-- pass your question to the chatbot as input in:
-- curl -sX POST http://localhost:8000/langserve/invoke -H 'Content-Type: application/json' --data-raw '{"input":"When does the class meet?"}' | jq
+- vi create_vectordb.py ((and add your cyverse username and password inside the code)
+```
 
 
+
+`- python3 create_vectordb.py --create_docs RNR355`
+
+then pass your question to the chatbot as input in:
+
+`- curl -sX POST http://localhost:8000/langserve/invoke -H 'Content-Type: application/json' --data-raw '{"input":"When does the class meet?"}' | jq`
+
+
+
+
+** If you make some changes to the DB or code, and want to rebuild it use `--no_download`
+
+i.e 
+```python3 create_vectordb.py --no_download --create_docs RNR355 ```
