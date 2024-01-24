@@ -21,7 +21,7 @@ UBUNTU_CODENAME=jammy
   
 - Install docker with  [docker compose](https://docs.docker.com/compose/install/).
 ```- git clone https://github.com/ua-data7/chatur-codeathon
-- cd propeller/langserve
+- cd ~/chatur-codeathon/propeller/langserve
 - docker compose --file docker-compose.yml --project-name "chatur" build
 - docker compose --file docker-compose.yml --project-name "chatur" up -d
 - docker compose --file docker-compose.yml --project-name "chatur" exec ollama ollama pull mistral
@@ -30,7 +30,7 @@ UBUNTU_CODENAME=jammy
 - pip install -r requirements.langclient.txt
 - sudo apt install jq
 - sudo apt install libreoffice
-- cd /chatur-codeathon/propeller/gen_vectordb
+- cd ~/chatur-codeathon/propeller/gen_vectordb
 - vi create_vectordb.py ((and add your cyverse username and password inside the code)
 ```
 
