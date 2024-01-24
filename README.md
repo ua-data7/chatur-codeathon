@@ -49,3 +49,4 @@ then pass your question to the chatbot as input in:
 
 i.e 
 ```python3 create_vectordb.py --no_download --create_docs RNR355 ```
+then run all docker compose commands again.
