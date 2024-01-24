@@ -5,25 +5,39 @@
 import pathlib
 import json
 import os
+import tempfile
+import subprocess
 from typing import Optional, Literal, List
 
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import GPT4AllEmbeddings
+from langchain_community.embeddings import (
+    GPT4AllEmbeddings,
+    OpenAIEmbeddings
+)
+
 from langchain_community.vectorstores import Chroma   # pylint: disable=no-name-in-module
 from langchain_community.document_loaders import (
     PyPDFLoader,
-    UnstructuredMarkdownLoader,
+    #UnstructuredMarkdownLoader,
+    #UnstructuredPDFLoader,
+    PDFMinerLoader,
+    PyPDFium2Loader,
+    PyMuPDFLoader,
     UnstructuredPowerPointLoader,
     TextLoader,
     Docx2txtLoader,
     UnstructuredExcelLoader
 )
 
+from langchain_experimental.text_splitter import SemanticChunker
 from langchain.text_splitter import MarkdownHeaderTextSplitter
 from langchain_core.vectorstores import VectorStoreRetriever
 
 import tiktoken
+import pptx2md
+from pptx2md.global_var import g as pptx2md_g
+
 
 def _tiktoken_len(text):
     tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -61,6 +75,7 @@ class VectorDB:
         removed = []
         for doc in docs:
             self._make_meta_safe(doc)
+            
             if not doc.page_content:
                 # empty
                 removed.append(doc)
@@ -71,9 +86,12 @@ class VectorDB:
     def _make_meta_safe(self, doc:Document):
         for k in doc.metadata:
             v = doc.metadata[k]
-            if isinstance(v, list):
+            if isinstance(v, dict):
+                # is dict
+                doc.metadata[k] = json.dumps(v)
+            elif isinstance(v, list):
                 # is array
-                doc.metadata[k] = ", ".join(v)
+                doc.metadata[k] = json.dumps(v)
 
     def add_file(self, path:str, doc_output_path:Optional[str]=None) -> None:
         """
@@ -90,8 +108,10 @@ class VectorDB:
                 self.add_pdf(path, doc_output_path)
             case ".md":
                 self.add_markdown(path, doc_output_path)
-            case ".pptx" | ".ppt":
+            case ".pptx":
                 self.add_pptx(path, doc_output_path)
+            case ".ppt":
+                self.add_ppt(path, doc_output_path)
             case ".docx" | ".doc":
                 self.add_docx(path, doc_output_path)
             case ".xlsx" | ".xls":
@@ -135,7 +155,60 @@ class VectorDB:
         Params:
           pdf_path  The path to the file on the local filesystem
         """
+
+        """
+        use one of these
+        - _add_pdf_pypdf
+        - _add_pdf_pdfminer
+        - _add_pdf_pypdfium2
+        - _add_pdf_pymupdf
+        """
+        return self._add_pdf_pypdf(pdf_path=pdf_path, doc_output_path=doc_output_path)
+
+    def _add_pdf_pypdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
         docs = PyPDFLoader(pdf_path).load_and_split()
+        self._make_doc_safe(docs)
+
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
+
+        self._add_docs(docs)
+
+    def _add_pdf_pdfminer(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+        docs = PDFMinerLoader(pdf_path).load()
+        self._make_doc_safe(docs)
+
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
+
+        self._add_docs(docs)
+
+    def _add_pdf_pypdfium2(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+        docs = PyPDFium2Loader(pdf_path).load()
+        self._make_doc_safe(docs)
+
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
+
+        self._add_docs(docs)
+
+    def _add_pdf_pymupdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+        docs = PyMuPDFLoader(pdf_path).load()
+        self._make_doc_safe(docs)
+
+        if doc_output_path:
+            self._dump_docs(docs, doc_output_path)
+
+        self._add_docs(docs)
+
+    def add_ppt(self, ppt_path:str, doc_output_path:Optional[str]) -> None:
+        """
+        Adds a PowerPoint file to the vector store.
+
+        Params:
+          ppt_path  The path to the file on the local filesystem
+        """
+        docs = UnstructuredPowerPointLoader(ppt_path).load()
         self._make_doc_safe(docs)
 
         if doc_output_path:
@@ -150,7 +223,46 @@ class VectorDB:
         Params:
           pptx_path  The path to the file on the local filesystem
         """
-        docs = UnstructuredPowerPointLoader(pptx_path, mode="elements").load()
+
+        """
+        use one of these
+        - _add_pptx_pptx2md
+        - _add_pptx_unstructured
+        """
+        return self._add_pptx_pptx2md(pptx_path=pptx_path, doc_output_path=doc_output_path)
+
+    def _add_pptx_pptx2md(self, pptx_path:str, doc_output_path:Optional[str]) -> None:
+        """
+        Adds a PowerPoint file to the vector store.
+
+        Params:
+          pptx_path  The path to the file on the local filesystem
+        """
+        try:
+            pptx2md_g.disable_image = True
+            pptx2md_g.disable_wmf = True
+            pptx2md_g.disable_color = True
+            pptx2md_g.disable_escaping = True
+
+            prs = pptx2md.Presentation(pptx=pptx_path)
+            temp_path = tempfile.mktemp()
+            md_out = pptx2md.outputter.md_outputter(temp_path)
+            pptx2md.parse(prs, md_out)
+            self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path)
+            
+            os.remove(temp_path)
+        except:
+            # fail to convert to markdown
+            self._add_pptx_unstructured(ppt_path=pptx_path, doc_output_path=doc_output_path)
+
+    def _add_pptx_unstructured(self, ppt_path:str, doc_output_path:Optional[str]) -> None:
+        """
+        Adds a PowerPoint file to the vector store.
+
+        Params:
+          ppt_path  The path to the file on the local filesystem
+        """
+        docs = UnstructuredPowerPointLoader(ppt_path).load()
         self._make_doc_safe(docs)
 
         if doc_output_path:
