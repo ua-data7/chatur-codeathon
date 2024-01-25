@@ -165,6 +165,13 @@ class VectorDB:
         docs = PyPDFLoader(pdf_path).load_and_split()
         self._make_doc_safe(docs)
 
+        for doc in docs:
+            content = doc.page_content.replace("\n","")
+            import pysbd
+            seg=pysbd.Segmenter(language="en",clean=False)
+            all_sent=seg.segment(content)
+            doc.page_content="\n".join(all_sent)
+            
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 

@@ -12,8 +12,8 @@ scratch_inter_root = "./scratch_intermediate"
 vectordb_root = "./vectordb"
 webdav_options = {
     'webdav_hostname': "https://data.cyverse.org",
-    'webdav_login':    "anonymous",
-    'webdav_password': ""
+    'webdav_login':    "mithunpaul08",
+    'webdav_password': "KwandumKidilam8!"
 }
 
 webdav_course_material_root = "/dav/iplant/projects/chatur/courses"
@@ -82,7 +82,7 @@ for root, dirs, files in os.walk(course_material_path, topdown=True):
             print("> ignore temp file '%s'" % fullpath)
             continue
         
-        print("> adding '%s'" % fullpath)
+        print("adding '%s'" % fullpath)
 
         if args.create_docs:
             print("> intermediate output '%s'" % docpath)
