@@ -1,0 +1,32 @@
+---
+version: "2.0"
+
+services:
+  ollama:
+    image: ollama/ollama
+    hostname: "ollama"
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+
+  langserve:
+    build:
+      context: .
+      dockerfile: Dockerfile.langserve
+    environment:
+      - "OLLAMA_HOST=ollama"
+    hostname: "langserve"
+    ports:
+      - "8000:8000"
+    volumes:
+      - type: bind
+        source: ./vectordb/RNR355
+        target: /opt/vectorstore
+    depends_on:
+      - ollama
