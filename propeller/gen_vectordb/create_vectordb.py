@@ -13,7 +13,7 @@ vectordb_root = "./vectordb"
 webdav_options = {
     'webdav_hostname': "https://data.cyverse.org",
     'webdav_login':    "anonymous",
-    'webdav_password': ""
+    'webdav_password': "anonymous_password"
 }
 
 webdav_course_material_root = "/dav/iplant/projects/chatur/courses"
