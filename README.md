@@ -30,9 +30,6 @@ for example `conda create --name chatur python=3.10`
 - vi create_vectordb.py ((and add your cyverse username and password inside the code)
 - python3 create_vectordb.py --create_docs RNR355
 
-- curl https://ollama.ai/install.sh | sh
-
-
 # now manually move gen_vectordb/vectordb folder to langserve/vectordb
 - cd ~/chatur-codeathon/propeller/langserve
 - docker compose --file docker-compose-vectordb.yml --project-name "chatur" build
