@@ -71,7 +71,7 @@ class VectorDB:
         removed = []
         for doc in docs:
             self._make_meta_safe(doc)
-            
+
             if not doc.page_content:
                 # empty
                 removed.append(doc)
@@ -160,7 +160,7 @@ class VectorDB:
         - _add_pdf_pymupdf
         """
         return self._add_pdf_pypdf(pdf_path=pdf_path, doc_output_path=doc_output_path)
-    
+
     def _add_pdf_pypdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
         docs = PyPDFLoader(pdf_path).load_and_split()
         self._make_doc_safe(docs)
@@ -261,7 +261,7 @@ class VectorDB:
         Params:
           docx_path  The path to the file on the local filesystem
         """
-        
+
         """
         use one of these
         - _add_docx_docx2txt
@@ -292,7 +292,7 @@ class VectorDB:
     def _add_docx_mammoth(self, docx_path:str, doc_output_path:Optional[str]) -> None:
         with open(docx_path, "rb") as docx_f:
             md_out = mammoth.convert_to_markdown(docx_f)
-            
+
         temp_path = tempfile.mktemp()
         with open(temp_path, "w") as temp_f:
             temp_f.write(md_out.value)
