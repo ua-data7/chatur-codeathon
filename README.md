@@ -18,6 +18,7 @@ PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-poli
 UBUNTU_CODENAME=jammy
 ```
 ##Steps (Note:These instructions won't work on an Apple m1 mac. Also please use a conda environment with python 3.10)
+for example `conda create --name chatur python=3.10`
   
 - Install docker with  [docker compose](https://docs.docker.com/compose/install/).
 ```- git clone https://github.com/ua-data7/chatur-codeathon
