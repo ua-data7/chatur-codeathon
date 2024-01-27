@@ -1,3 +1,4 @@
+import argparse
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import (
     ChatPromptTemplate,
@@ -6,7 +7,7 @@ from langchain.prompts import (
 )
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain_community.llms import Ollama
+from langchain_community.llms.ollama import Ollama
 
 from langchain.memory import ConversationBufferMemory
 from langserve import add_routes
@@ -25,12 +26,18 @@ from sse_starlette import EventSourceResponse
 from langserve import APIHandler
 from vectordb import VectorDB
 
-HOST = sys.argv[1]
-PORT = int(sys.argv[2])
-VECTORSTORE = sys.argv[3]
-OLLAMA_HOST = sys.argv[4]
+parser = argparse.ArgumentParser(
+    prog="langclient",
+    description="serve LLM+RAG via langserve")
 
-print("vectorstore: %s, ollama_host: %s" % (VECTORSTORE, OLLAMA_HOST))
+parser.add_argument("host", type=str, default="127.0.0.1", help="host for langserve to listen to, defualt 127.0.0.1")
+parser.add_argument("port", type=int, default=8000, help="port for langserve to listen to, default 8000")
+parser.add_argument("vectorstore", type=str, help="path to the directory of vector store")
+parser.add_argument("ollama", type=str, default="http://localhost:11434", help="URL of ollama, default http://localhost:11434")
+parser.add_argument("--ollama_key", type=str, help="api key to include in the header when talking to ollama api")
+args = parser.parse_args()
+
+print("vectorstore: %s, ollama_host: %s" % (args.vectorstore, args.ollama))
 
 
 def format_documents(docs):
@@ -51,14 +58,18 @@ class Question(CustomUserType):
     question: str
     context: list
 
-
+headers = {"Content-Type": "application/json"}
+if args.ollama_key:
+    headers["Authorization"] = "Bearer " + args.ollama_key
+print(headers)
 llm = Ollama(
-    base_url="http://%s:11434" % OLLAMA_HOST,
+    base_url=args.ollama,
+    headers=headers,
     model="mistral",
     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
 )
 
-vectorstore = VectorDB(VECTORSTORE)
+vectorstore = VectorDB(args.vectorstore)
 retriever = vectorstore.as_retriever()
 
 chain = (
@@ -79,7 +90,7 @@ add_routes(app, chain, path="/langserve")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=HOST, port=PORT)
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 ##########
