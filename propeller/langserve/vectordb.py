@@ -88,9 +88,10 @@ class VectorDB:
                     doctype = "pdf"
                     clean = True
 
-                seg=pysbd.Segmenter(language="en", doc_type=doctype, clean=clean)
-                all_sent=seg.segment(content)
-                page_content="\n".join(all_sent)
+                seg = pysbd.Segmenter(language="en", doc_type=doctype, clean=clean)
+                all_sent = seg.segment(content)
+                page_content = "\n".join(all_sent)
+                page_content = page_content.replace("   ", "\n")
 
                 if len(page_content) > 0:
                     new_doc = Document(page_content=page_content, metadata=doc.metadata.copy())
