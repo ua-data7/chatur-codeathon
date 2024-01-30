@@ -1,0 +1,5 @@
+__pycache__/
+scratch/
+scratch_intermediate/
+vectordb/
+.DS_Store
