@@ -30,7 +30,8 @@ for example `conda create --name chatur python=3.10`
 - vi create_vectordb.py ((and add your cyverse username and password inside the code)
 - python3 create_vectordb.py --create_docs RNR355
 
-# now manually move gen_vectordb/vectordb folder to langserve/vectordb
+# now manually move gen_vectordb/vectordb folder to langserve/vectordb todo: changer docker-compose to accomodate this
+- mv ~/chatur-codeathon/propeller/gen_vectordb/vectordb ~/chatur-codeathon/propeller/langserve
 - cd ~/chatur-codeathon/propeller/langserve
 - docker compose --file docker-compose-vectordb.yml --project-name "chatur" build
 - docker compose --file docker-compose-vectordb.yml --project-name "chatur" up -d
