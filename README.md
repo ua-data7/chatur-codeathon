@@ -33,9 +33,9 @@ for example `conda create --name chatur python=3.10`
 # now manually move gen_vectordb/vectordb folder to langserve/vectordb todo: changer docker-compose to accomodate this
 - mv ~/chatur-codeathon/propeller/gen_vectordb/vectordb ~/chatur-codeathon/propeller/langserve
 - cd ~/chatur-codeathon/propeller/langserve
-- docker compose --file docker-compose-vectordb.yml --project-name "chatur" build
-- docker compose --file docker-compose-vectordb.yml --project-name "chatur" up -d
-- docker compose --file docker-compose-vectordb.yml --project-name "chatur" exec ollama ollama pull mistral
+- docker compose --file docker-compose-vectordb-gpu.yml --project-name "chatur" build
+- docker compose --file docker-compose-vectordb-gpu.yml  --project-name "chatur" up -d
+- docker compose --file docker-compose-vectordb-gpu.yml  --project-name "chatur" exec ollama ollama pull mistral
 
 ```
 
