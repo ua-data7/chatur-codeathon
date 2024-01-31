@@ -25,6 +25,10 @@ from sse_starlette import EventSourceResponse
 from langserve import APIHandler
 from vectordb import VectorDB
 
+from langchain.globals import set_debug
+
+set_debug(True) # Comment out to remove debug messages
+
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 VECTORSTORE = sys.argv[3]
@@ -38,12 +42,25 @@ def format_documents(docs):
     print(out_docs)
     return out_docs
 
+"""You are a teaching assistant. Answer the student's question using information only and only from the context passage that is between triple quotes. When you answer the question, quote the text that you used to base your answer off. If you can't answer it, then say “I can't answer this question”.Context: 
+```"""
+
 # Prompt
+# prompt = ChatPromptTemplate.from_messages([
+#     SystemMessagePromptTemplate.from_template(
+#         "Using the following documents, help answer questions as a teacher would help a student. Remember to only answer the question they asked: {context}"
+#     ),
+#     HumanMessagePromptTemplate.from_template("{question}"),
+# ])
+
 prompt = ChatPromptTemplate.from_messages([
     SystemMessagePromptTemplate.from_template(
-        "Using the following documents, help answer questions as a teacher would help a student. Remember to only answer the question they asked: {context}"
+        """"You are a teaching assistant. Answer the student's question using information only and only from the context passage that is between triple quotes. When you answer the question, quote the text that you used to base your answer off. If you can't answer it, then say “I can't answer this question”.
+        
+        Context: 
+        ```{context}```"""
     ),
-    HumanMessagePromptTemplate.from_template("{question}"),
+    HumanMessagePromptTemplate.from_template("Question: {question}"),
 ])
 
 
