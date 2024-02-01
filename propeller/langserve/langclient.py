@@ -23,7 +23,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from sse_starlette import EventSourceResponse
 
 from langserve import APIHandler
-from vectordb import VectorDB
+from vectordb_reader import VectorDBReader
 
 from langchain.globals import set_debug
 
@@ -75,7 +75,7 @@ llm = Ollama(
     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
 )
 
-vectorstore = VectorDB(VECTORSTORE)
+vectorstore = VectorDBReader(VECTORSTORE)
 retriever = vectorstore.as_retriever()
 
 chain = (

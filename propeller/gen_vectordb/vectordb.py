@@ -49,7 +49,7 @@ class VectorDB:
     persisted.
     """
 
-    def __init__(self, db_path:Optional[str]):
+    def __init__(self, db_path:Optional[str]=None):
         self._db_path = db_path
         self._impl = Chroma(embedding_function=GPT4AllEmbeddings(), persist_directory=db_path)
 
@@ -134,7 +134,7 @@ class VectorDB:
         """
         # detect format
         file_ext = pathlib.Path(path).suffix
-        match str.lower(file_ext):
+        match file_ext.lower():
             case ".pdf":
                 self.add_pdf(path, doc_output_path)
             case ".md":
@@ -155,7 +155,7 @@ class VectorDB:
             case _:
                 print("ignore unknown file (%s)" % path)
 
-    def add_markdown(self, markdown_path:str, doc_output_path:Optional[str]) -> None:
+    def add_markdown(self, markdown_path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a markdown file to the vector store.
 
@@ -179,7 +179,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def add_pdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+    def add_pdf(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a PDF file to the vector store.
 
@@ -196,7 +196,7 @@ class VectorDB:
         """
         return self._add_pdf_pypdf(pdf_path=pdf_path, doc_output_path=doc_output_path)
     
-    def _add_pdf_pypdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_pdf_pypdf(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
         docs = PyPDFLoader(pdf_path).load_and_split()
         docs = self._clean_doc(docs, True)
 
@@ -205,7 +205,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def _add_pdf_pdfminer(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_pdf_pdfminer(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
         docs = PDFMinerLoader(pdf_path).load()
         docs = self._clean_doc(docs, True)
 
@@ -214,7 +214,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def _add_pdf_pypdfium2(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_pdf_pypdfium2(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
         docs = PyPDFium2Loader(pdf_path).load()
         docs = self._clean_doc(docs, True)
 
@@ -223,7 +223,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def _add_pdf_pymupdf(self, pdf_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_pdf_pymupdf(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
         docs = PyMuPDFLoader(pdf_path).load()
         docs = self._clean_doc(docs, True)
 
@@ -232,7 +232,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def add_ppt(self, ppt_path:str, doc_output_path:Optional[str]) -> None:
+    def add_ppt(self, ppt_path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a PowerPoint file to the vector store.
 
@@ -247,7 +247,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def add_pptx(self, pptx_path:str, doc_output_path:Optional[str]) -> None:
+    def add_pptx(self, pptx_path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a PowerPoint file to the vector store.
 
@@ -262,7 +262,7 @@ class VectorDB:
         """
         return self._add_pptx_pptx2md(pptx_path=pptx_path, doc_output_path=doc_output_path)
 
-    def _add_pptx_pptx2md(self, pptx_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_pptx_pptx2md(self, pptx_path:str, doc_output_path:Optional[str]=None) -> None:
         try:
             pptx2md_g.disable_image = True
             pptx2md_g.disable_wmf = True
@@ -280,7 +280,7 @@ class VectorDB:
             # fail to convert to markdown
             self._add_pptx_unstructured(ppt_path=pptx_path, doc_output_path=doc_output_path)
 
-    def _add_pptx_unstructured(self, ppt_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_pptx_unstructured(self, ppt_path:str, doc_output_path:Optional[str]=None) -> None:
         docs = UnstructuredPowerPointLoader(ppt_path).load()
         docs = self._clean_doc(docs, False)
 
@@ -289,7 +289,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def add_docx(self, docx_path:str, doc_output_path:Optional[str]) -> None:
+    def add_docx(self, docx_path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a Word file to the vector store.
 
@@ -304,7 +304,7 @@ class VectorDB:
         """
         return self._add_docx_docx2txt(docx_path=docx_path, doc_output_path=doc_output_path)
 
-    def _add_docx_docx2txt(self, docx_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_docx_docx2txt(self, docx_path:str, doc_output_path:Optional[str]=None) -> None:
         docs = Docx2txtLoader(docx_path).load()
         docs = self._clean_doc(docs, False)
 
@@ -313,7 +313,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def _add_docx_mammoth(self, docx_path:str, doc_output_path:Optional[str]) -> None:
+    def _add_docx_mammoth(self, docx_path:str, doc_output_path:Optional[str]=None) -> None:
         with open(docx_path, "rb") as docx_f:
             md_out = mammoth.convert_to_markdown(docx_f)
             
@@ -325,7 +325,7 @@ class VectorDB:
 
         os.remove(temp_path)
 
-    def add_xlsx(self, xlsx_path:str, doc_output_path:Optional[str]) -> None:
+    def add_xlsx(self, xlsx_path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a Excel file to the vector store.
 
@@ -340,7 +340,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def add_text(self, text:Literal, doc_output_path:Optional[str]) -> None:
+    def add_text(self, text:Literal, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a block of text to the vector store.
 
@@ -355,7 +355,7 @@ class VectorDB:
 
         self._add_docs(docs)
 
-    def add_text_file(self, text_path:str, doc_output_path:Optional[str]) -> None:
+    def add_text_file(self, text_path:str, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a text file of unknown type to the vector store.
 

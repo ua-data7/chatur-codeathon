@@ -1,7 +1,7 @@
 import os
 import chain
 import argparse
-from vectordb import VectorDB
+from vectordb_reader import VectorDBReader
 from langchain.globals import set_debug
 
 set_debug(True)
@@ -25,9 +25,9 @@ if not args.no_vectordb:
         print("failed to find vectordb for course %s" % course_name)
         exit(1)
     
-    vectorstore = VectorDB(vectordb_path)
+    vectorstore = VectorDBReader(vectordb_path)
 else:
-    vectorstore = VectorDB(None)
+    vectorstore = VectorDBReader(None)
 
 retriever = vectorstore.as_retriever()
 
