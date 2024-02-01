@@ -34,6 +34,7 @@ import pptx2md
 from pptx2md.global_var import g as pptx2md_g
 import mammoth
 import pysbd
+import markdownify 
 
 
 def _tiktoken_len(text) -> int:
@@ -150,6 +151,8 @@ class VectorDB:
                 print("ignore microsoft excel file (%s)" % path)
             case ".png" | ".jpg" | ".jpeg" | ".gif" | ".tiff":
                 print("ignore image file (%s)" % path)
+            case ".html" | ".htm":
+                self.add_html(path, doc_output_path)
             case ".txt":
                 self.add_text_file(path, doc_output_path)
             case _:
@@ -178,6 +181,27 @@ class VectorDB:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
+
+    def add_html(self, html_path:str, doc_output_path:Optional[str]=None) -> None:
+        """
+        Adds a html file to the vector store.
+
+        Params:
+          html_path  The path to the file on the local filesystem
+        """
+        md = None
+        with open(html_path, "r") as html_f:
+            html_content = html_f.read()
+            md = markdownify.markdownify(html_content)
+
+        if len(md) > 0:
+            temp_path = tempfile.mktemp()
+            with open(temp_path, "w") as temp_f:
+                temp_f.write(md)
+
+            self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path)
+
+            os.remove(temp_path)
 
     def add_pdf(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
         """
