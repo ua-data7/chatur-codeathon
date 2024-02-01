@@ -371,8 +371,11 @@ class VectorDB:
         self._add_docs(docs)
 
     def _add_docs(self, docs) -> None:
-        self._impl = Chroma.from_documents(
-            documents=docs, embedding=self._impl.embeddings, persist_directory=self._db_path)
+        if len(docs) > 0:
+            self._impl = Chroma.from_documents(
+                documents=docs, embedding=self._impl.embeddings, persist_directory=self._db_path)
+        else:
+            print(">> ignoring empty doc")
 
     def as_retriever(self) -> VectorStoreRetriever:
         """Return VectorStoreRetriever initialized from this VectorStore."""
