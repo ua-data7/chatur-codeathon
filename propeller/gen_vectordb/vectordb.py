@@ -102,6 +102,17 @@ class VectorDB:
         self._make_doc_safe(split_docs)
 
         return split_docs
+    
+    def _add_source(self, docs:List[Document], source:Optional[str]=None):
+        if not source:
+            return docs
+        
+        for doc in docs:
+            if not hasattr(doc, "metadata"):
+                doc.metadata = {}
+            
+            # overwrite source
+            doc.metadata["source"] = source
 
     def _make_doc_safe(self, docs:List[Document]) -> None:
         removed = []
@@ -125,7 +136,7 @@ class VectorDB:
                 # is array
                 doc.metadata[k] = json.dumps(v)
 
-    def add_file(self, path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_file(self, path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a file to the vector store. It will use the file's extension to
         determine the type of file.
@@ -133,34 +144,37 @@ class VectorDB:
         Params:
           path  The path to the file on the local filesystem
         """
+        if not source:
+            source = path
+
         # detect format
         file_ext = pathlib.Path(path).suffix
         match file_ext.lower():
             case ".pdf":
-                self.add_pdf(path, doc_output_path)
+                self.add_pdf(path, source=source, doc_output_path=doc_output_path)
             case ".md":
-                self.add_markdown(path, doc_output_path)
+                self.add_markdown(path, source=source, doc_output_path=doc_output_path)
             case ".pptx":
-                self.add_pptx(path, doc_output_path)
+                self.add_pptx(path, source=source, doc_output_path=doc_output_path)
             case ".ppt":
-                self.add_ppt(path, doc_output_path)
+                self.add_ppt(path, source=source, doc_output_path=doc_output_path)
             case ".docx" | ".doc":
-                self.add_docx(path, doc_output_path)
+                self.add_docx(path, source=source, doc_output_path=doc_output_path)
             case ".xlsx" | ".xls":
-                #self.add_xlsx(path, doc_output_path)
+                #self.add_xlsx(path, source=source, doc_output_path)
                 print("ignore microsoft excel file (%s)" % path)
             case ".png" | ".jpg" | ".jpeg" | ".gif" | ".tiff":
                 print("ignore image file (%s)" % path)
             case ".html" | ".htm":
-                self.add_html(path, doc_output_path)
+                self.add_html(path, source=source, doc_output_path=doc_output_path)
             case ".url":
                 self.add_url(path, doc_output_path)
             case ".txt":
-                self.add_text_file(path, doc_output_path)
+                self.add_text_file(path, source=source, doc_output_path=doc_output_path)
             case _:
                 print("ignore unknown file (%s)" % path)
 
-    def add_markdown(self, markdown_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_markdown(self, markdown_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a markdown file to the vector store.
 
@@ -178,13 +192,15 @@ class VectorDB:
 
         docs = markdown_splitter.split_text(filecontent)
         docs = self._clean_doc(docs, False)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def add_html(self, html_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_html(self, html_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a html file to the vector store.
 
@@ -201,11 +217,11 @@ class VectorDB:
             with open(temp_path, "w") as temp_f:
                 temp_f.write(md)
 
-            self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path)
+            self.add_markdown(markdown_path=temp_path, source=source, doc_output_path=doc_output_path)
 
             os.remove(temp_path)
 
-    def add_pdf(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_pdf(self, pdf_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a PDF file to the vector store.
 
@@ -220,45 +236,53 @@ class VectorDB:
         - _add_pdf_pypdfium2
         - _add_pdf_pymupdf
         """
-        return self._add_pdf_pypdf(pdf_path=pdf_path, doc_output_path=doc_output_path)
+        return self._add_pdf_pypdf(pdf_path=pdf_path, source=source, doc_output_path=doc_output_path)
     
-    def _add_pdf_pypdf(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_pdf_pypdf(self, pdf_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         docs = PyPDFLoader(pdf_path).load_and_split()
         docs = self._clean_doc(docs, True)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def _add_pdf_pdfminer(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_pdf_pdfminer(self, pdf_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         docs = PDFMinerLoader(pdf_path).load()
         docs = self._clean_doc(docs, True)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def _add_pdf_pypdfium2(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_pdf_pypdfium2(self, pdf_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         docs = PyPDFium2Loader(pdf_path).load()
         docs = self._clean_doc(docs, True)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def _add_pdf_pymupdf(self, pdf_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_pdf_pymupdf(self, pdf_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         docs = PyMuPDFLoader(pdf_path).load()
         docs = self._clean_doc(docs, True)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def add_ppt(self, ppt_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_ppt(self, ppt_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a PowerPoint file to the vector store.
 
@@ -267,13 +291,15 @@ class VectorDB:
         """
         docs = UnstructuredPowerPointLoader(ppt_path).load()
         docs = self._clean_doc(docs, False)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def add_pptx(self, pptx_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_pptx(self, pptx_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a PowerPoint file to the vector store.
 
@@ -286,9 +312,9 @@ class VectorDB:
         - _add_pptx_pptx2md
         - _add_pptx_unstructured
         """
-        return self._add_pptx_pptx2md(pptx_path=pptx_path, doc_output_path=doc_output_path)
+        return self._add_pptx_pptx2md(pptx_path=pptx_path, source=source, doc_output_path=doc_output_path)
 
-    def _add_pptx_pptx2md(self, pptx_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_pptx_pptx2md(self, pptx_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         try:
             pptx2md_g.disable_image = True
             pptx2md_g.disable_wmf = True
@@ -299,23 +325,25 @@ class VectorDB:
             temp_path = tempfile.mktemp()
             md_out = pptx2md.outputter.md_outputter(temp_path)
             pptx2md.parse(prs, md_out)
-            self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path)
+            self.add_markdown(markdown_path=temp_path, source=source, doc_output_path=doc_output_path)
 
             os.remove(temp_path)
         except:
             # fail to convert to markdown
             self._add_pptx_unstructured(ppt_path=pptx_path, doc_output_path=doc_output_path)
 
-    def _add_pptx_unstructured(self, ppt_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_pptx_unstructured(self, ppt_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         docs = UnstructuredPowerPointLoader(ppt_path).load()
         docs = self._clean_doc(docs, False)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def add_docx(self, docx_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_docx(self, docx_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a Word file to the vector store.
 
@@ -328,18 +356,20 @@ class VectorDB:
         - _add_docx_docx2txt
         - _add_docx_mammoth (not reliable)
         """
-        return self._add_docx_docx2txt(docx_path=docx_path, doc_output_path=doc_output_path)
+        return self._add_docx_docx2txt(docx_path=docx_path, source=source, doc_output_path=doc_output_path)
 
-    def _add_docx_docx2txt(self, docx_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_docx_docx2txt(self, docx_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         docs = Docx2txtLoader(docx_path).load()
         docs = self._clean_doc(docs, False)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def _add_docx_mammoth(self, docx_path:str, doc_output_path:Optional[str]=None) -> None:
+    def _add_docx_mammoth(self, docx_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         with open(docx_path, "rb") as docx_f:
             md_out = mammoth.convert_to_markdown(docx_f)
             
@@ -347,11 +377,11 @@ class VectorDB:
         with open(temp_path, "w") as temp_f:
             temp_f.write(md_out.value)
 
-        self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path)
+        self.add_markdown(markdown_path=temp_path, source=source, doc_output_path=doc_output_path)
 
         os.remove(temp_path)
 
-    def add_xlsx(self, xlsx_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_xlsx(self, xlsx_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a Excel file to the vector store.
 
@@ -360,13 +390,15 @@ class VectorDB:
         """
         docs = UnstructuredExcelLoader(xlsx_path).load()
         docs = self._clean_doc(docs, False)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def add_text(self, text:Literal, doc_output_path:Optional[str]=None) -> None:
+    def add_text(self, text:Literal, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a block of text to the vector store.
 
@@ -375,13 +407,15 @@ class VectorDB:
         """
         docs = self.text_splitter.create_documents([text])
         docs = self._clean_doc(docs, False)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
 
-    def add_text_file(self, text_path:str, doc_output_path:Optional[str]=None) -> None:
+    def add_text_file(self, text_path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
         """
         Adds a text file of unknown type to the vector store.
 
@@ -390,6 +424,8 @@ class VectorDB:
         """
         docs = TextLoader(text_path).load()
         docs = self._clean_doc(docs, False)
+        if source:
+            self._add_source(docs, source)
 
         if doc_output_path:
             self._dump_docs(docs, doc_output_path)
@@ -426,63 +462,63 @@ class VectorDB:
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_html(html_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_html(html_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "application/pdf":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_pdf(pdf_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_pdf(pdf_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "application/vnd.ms-powerpoint":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_ppt(ppt_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_ppt(ppt_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_pptx(pptx_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_pptx(pptx_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_pptx(pptx_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_pptx(pptx_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "text/plain":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_text_file(text_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_text_file(text_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "text/plain":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_text_file(text_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_text_file(text_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_docx(docx_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_docx(docx_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case "text/markdown":
                         temp_path = tempfile.mktemp()
                         with open(temp_path, "w") as temp_f:
                             temp_f.write(r.text)
 
-                        self.add_markdown(markdown_path=temp_path, doc_output_path=doc_output_path_url)
+                        self.add_markdown(markdown_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
                         os.remove(temp_path)
                     case _:
                         print("ignore unknown content type for %s (%s)" % (line, content_type))

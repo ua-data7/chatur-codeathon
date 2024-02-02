@@ -135,9 +135,9 @@ for root, dirs, files in os.walk(course_material_path, topdown=True):
 
         if args.create_docs:
             print("> intermediate output '%s'" % docpath)
-            vectorstore.add_file(fullpath, docpath)
+            vectorstore.add_file(path=fullpath, source=relpath, doc_output_path=docpath)
         else:
-            vectorstore.add_file(fullpath)
+            vectorstore.add_file(path=fullpath, source=relpath)
 
 
 print("VectorDB for %s is created" % course_name)
