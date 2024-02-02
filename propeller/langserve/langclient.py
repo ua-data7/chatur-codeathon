@@ -32,7 +32,8 @@ set_debug(True) # Comment out to remove debug messages
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 VECTORSTORE = sys.argv[3]
-OLLAMA_HOST = sys.argv[4]
+COLLECTION = sys.argv[4]
+OLLAMA_HOST = sys.argv[5]
 
 print("vectorstore: %s, ollama_host: %s" % (VECTORSTORE, OLLAMA_HOST))
 
@@ -75,7 +76,7 @@ llm = Ollama(
     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
 )
 
-vectorstore = VectorDBReader(VECTORSTORE)
+vectorstore = VectorDBReader(db_path=VECTORSTORE, collection_name=COLLECTION)
 retriever = vectorstore.as_retriever()
 
 chain = (
