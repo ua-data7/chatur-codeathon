@@ -6,7 +6,8 @@ from langchain.prompts import (
 )
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain_community.llms import Ollama
+# from langchain_community.llms import Ollama
+from langchain_community.chat_models import ChatOllama
 
 from langchain.memory import ConversationBufferMemory
 from langserve import add_routes
@@ -38,24 +39,21 @@ print("vectorstore: %s, ollama_host: %s" % (VECTORSTORE, OLLAMA_HOST))
 
 
 def format_documents(docs):
-    out_docs = "\n".join(doc.page_content for doc in docs)
-    print(out_docs)
+    """"""
+    out_docs = "\n\n".join(f"Text: {doc.page_content}\nSource: {doc.metadata['source']}, page {doc.metadata['page']}" for doc in docs)
     return out_docs
 
-"""You are a teaching assistant. Answer the student's question using information only and only from the context passage that is between triple quotes. When you answer the question, quote the text that you used to base your answer off. If you can't answer it, then say “I can't answer this question”.Context: 
-```"""
-
-# Prompt
-# prompt = ChatPromptTemplate.from_messages([
-#     SystemMessagePromptTemplate.from_template(
-#         "Using the following documents, help answer questions as a teacher would help a student. Remember to only answer the question they asked: {context}"
-#     ),
-#     HumanMessagePromptTemplate.from_template("{question}"),
-# ])
 
 prompt = ChatPromptTemplate.from_messages([
     SystemMessagePromptTemplate.from_template(
-        """"You are a teaching assistant. Answer the student's question using information only and only from the context passage that is between triple quotes. When you answer the question, quote the text that you used to base your answer off. If you can't answer it, then say “I can't answer this question”.
+        """"You are a teaching assistant. Answer the student's question using information only and only from the text fields of the documents included in the context that is between triple quotes. When you answer the question, quote the text that you used to base your answer off and state its source, which is also part of the document in the context. If you can't answer it, then say “I can't answer this question”.
+
+        For example. If a context document is:
+
+        Text: Further, these experiences must be delivered in a context that encourages the young person to drive goal setting and achievement, as opposed to learning trajectories defined by others (Olenik, 2017).
+        Source: /papers/az1900-2021.pdf, page 2
+
+        And the question is: "How must the experiences be delivered?", you will phrase the answer and state that you did from information that originates from page 2 of the file named /papers/az1900-2021.pdf.
         
         Context: 
         ```{context}```"""
@@ -69,9 +67,9 @@ class Question(CustomUserType):
     context: list
 
 
-llm = Ollama(
+llm = ChatOllama(
     base_url="http://%s:11434" % OLLAMA_HOST,
-    model="mistral",
+    model="mixtral",
     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
 )
 
@@ -98,7 +96,9 @@ if __name__ == "__main__":
 
     uvicorn.run(app, host=HOST, port=PORT)
 
+# chain.invoke("Hello")
 
+x = 0
 ##########
 # to use #
 ##########
