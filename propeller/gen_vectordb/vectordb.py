@@ -35,7 +35,6 @@ from pptx2md.global_var import g as pptx2md_g
 import mammoth
 import pysbd
 import markdownify 
-import requests
 
 def _tiktoken_len(text) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -136,7 +135,7 @@ class VectorDB:
                 # is array
                 doc.metadata[k] = json.dumps(v)
 
-    def add_file(self, path:str, source:Optional[str]=None, doc_output_path:Optional[str]=None) -> None:
+    def add_file(self, path:str, source:Optional[str]=None, format:Optional[str]="", doc_output_path:Optional[str]=None) -> None:
         """
         Adds a file to the vector store. It will use the file's extension to
         determine the type of file.
@@ -168,7 +167,7 @@ class VectorDB:
             case ".html" | ".htm":
                 self.add_html(path, source=source, doc_output_path=doc_output_path)
             case ".url":
-                self.add_url(path, doc_output_path)
+                print("ignore url file (%s)" % path)
             case ".txt":
                 self.add_text_file(path, source=source, doc_output_path=doc_output_path)
             case _:
@@ -431,97 +430,6 @@ class VectorDB:
             self._dump_docs(docs, doc_output_path)
 
         self._add_docs(docs)
-
-    def add_url(self, url_path:str, doc_output_path:Optional[str]=None) -> None:
-        """
-        Adds a url file to the vector store.
-
-        Params:
-          url_path  The path to the file on the local filesystem
-        """
-        md = None
-        with open(url_path, "r") as html_f:
-            for idx, line in enumerate(html_f.readlines()):
-                if line.strip().startswith("#"):
-                    continue
-
-                if len(line.strip()) == 0:
-                    continue
-
-                # line is for url
-                print("retrieving data from url %s" % line.strip())
-                r = requests.get(line.strip())
-
-                doc_output_path_url = doc_output_path + "." + str(idx)
-
-                content_type = r.headers["Content-Type"]
-                content_type_arr = content_type.split(";")
-                match content_type_arr[0]:
-                    case "text/html" | "application/xhtml+xml":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_html(html_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "application/pdf":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_pdf(pdf_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "application/vnd.ms-powerpoint":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_ppt(ppt_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_pptx(pptx_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_pptx(pptx_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "text/plain":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_text_file(text_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "text/plain":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_text_file(text_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_docx(docx_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case "text/markdown":
-                        temp_path = tempfile.mktemp()
-                        with open(temp_path, "w") as temp_f:
-                            temp_f.write(r.text)
-
-                        self.add_markdown(markdown_path=temp_path, source=line.strip(), doc_output_path=doc_output_path_url)
-                        os.remove(temp_path)
-                    case _:
-                        print("ignore unknown content type for %s (%s)" % (line, content_type))
 
     def _add_docs(self, docs) -> None:
         if len(docs) > 0:
