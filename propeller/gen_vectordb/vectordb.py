@@ -6,6 +6,7 @@ import pathlib
 import json
 import os
 import tempfile
+import uuid
 from typing import Optional, Literal, List
 
 from langchain_core.documents import Document
@@ -36,6 +37,8 @@ import mammoth
 import pysbd
 import markdownify 
 import chromadb
+
+from chromadb.utils.batch_utils import create_batches
 
 def _tiktoken_len(text) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -448,15 +451,15 @@ class VectorDB:
         self._add_docs(docs)
 
     def _add_docs(self, docs) -> None:
-        if len(docs) > 0:
-            self._impl = Chroma.from_documents(
-                documents=docs,
-                embedding=self._embedding,
-                collection_name=self._collection_name,
-                persist_directory=self._db_path
-            )
-        else:
+        if len(docs) == 0:
             print(">> ignoring empty doc")
+            return
+
+        texts = [doc.page_content for doc in docs]
+        metadatas = [doc.metadata for doc in docs]
+        ids = [str(uuid.uuid1()) for _ in texts]
+
+        self._impl.add_texts(texts=texts, metadatas=metadatas, ids=ids)
 
     def as_retriever(self) -> VectorStoreRetriever:
         """Return VectorStoreRetriever initialized from this VectorStore."""
