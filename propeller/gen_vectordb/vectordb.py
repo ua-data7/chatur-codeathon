@@ -35,6 +35,7 @@ from pptx2md.global_var import g as pptx2md_g
 import mammoth
 import pysbd
 import markdownify 
+import chromadb
 
 def _tiktoken_len(text) -> int:
     tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -49,9 +50,24 @@ class VectorDB:
     persisted.
     """
 
-    def __init__(self, db_path:Optional[str]=None):
+    def __init__(self, db_path:Optional[str]=None, collection_name:Optional[str]="langchain"):
+        self._embedding=GPT4AllEmbeddings()
         self._db_path = db_path
-        self._impl = Chroma(embedding_function=GPT4AllEmbeddings(), persist_directory=db_path)
+        self._collection_name=collection_name
+        
+        client_settings = chromadb.Settings()
+        if db_path:
+            client_settings.persist_directory=db_path
+            client_settings.is_persistent=True
+
+        client = chromadb.Client(client_settings)
+
+        self._impl = Chroma(
+            embedding_function=self._embedding,
+            client_settings=client_settings,
+            client=client,
+            collection_name=self._collection_name, 
+        )
 
         # this splits the input text
         self.text_splitter = RecursiveCharacterTextSplitter(
@@ -434,7 +450,11 @@ class VectorDB:
     def _add_docs(self, docs) -> None:
         if len(docs) > 0:
             self._impl = Chroma.from_documents(
-                documents=docs, embedding=self._impl.embeddings, persist_directory=self._db_path)
+                documents=docs,
+                embedding=self._embedding,
+                collection_name=self._collection_name,
+                persist_directory=self._db_path
+            )
         else:
             print(">> ignoring empty doc")
 

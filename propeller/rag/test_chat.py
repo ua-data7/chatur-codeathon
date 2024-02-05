@@ -19,15 +19,15 @@ args = parser.parse_args()
 
 if not args.no_vectordb:
     course_name = args.course_number.upper().strip()
-    vectordb_path = os.path.join(vectordb_root, course_name)
+    vectordb_path = os.path.abspath(vectordb_root)
 
     if not os.path.exists(vectordb_path):
         print("failed to find vectordb for course %s" % course_name)
         exit(1)
     
-    vectorstore = VectorDBReader(vectordb_path)
+    vectorstore = VectorDBReader(db_path=vectordb_path, collection_name=course_name)
 else:
-    vectorstore = VectorDBReader(None)
+    vectorstore = VectorDBReader(db_path=None)
 
 retriever = vectorstore.as_retriever()
 

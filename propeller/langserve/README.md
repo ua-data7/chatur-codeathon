@@ -62,7 +62,7 @@ docker compose --file docker-compose.yml --project-name "chatur" up -d
 docker compose --file docker-compose.yml --project-name "chatur" exec ollama ollama pull mistral
 ```
 
-### Vector Database in ./vectordb/RNR355; No GPU
+### Vector Database in ./vectordb; No GPU
 
 build and run
 ```
@@ -71,7 +71,7 @@ docker compose --file docker-compose-vectordb.yml --project-name "chatur" up -d
 docker compose --file docker-compose-vectordb.yml --project-name "chatur" exec ollama ollama pull mistral
 ```
 
-### Vector Database in ./vectordb/RNR355; NVIDIA GPU
+### Vector Database in ./vectordb; NVIDIA GPU
 
 build and run
 ```

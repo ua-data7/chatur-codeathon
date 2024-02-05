@@ -10,6 +10,7 @@ from langchain_community.embeddings import (
 
 from langchain_community.vectorstores import Chroma   # pylint: disable=no-name-in-module
 from langchain_core.vectorstores import VectorStoreRetriever
+import chromadb
 
 class VectorDBReader:
     """
@@ -18,9 +19,24 @@ class VectorDBReader:
     persisted.
     """
 
-    def __init__(self, db_path:Optional[str]=None):
+    def __init__(self, db_path:Optional[str]=None, collection_name:Optional[str]="langchain"):
+        self._embedding=GPT4AllEmbeddings()
         self._db_path = db_path
-        self._impl = Chroma(embedding_function=GPT4AllEmbeddings(), persist_directory=db_path)
+        self._collection_name=collection_name
+
+        client_settings = chromadb.Settings()
+        if db_path:
+            client_settings.persist_directory=db_path
+            client_settings.is_persistent=True
+
+        client = chromadb.Client(client_settings)
+        
+        self._impl = Chroma(
+            embedding_function=self._embedding, 
+            client_settings=client_settings,
+            client=client,
+            collection_name=self._collection_name, 
+        )
 
     def as_retriever(self) -> VectorStoreRetriever:
         """Return VectorStoreRetriever initialized from this VectorStore."""

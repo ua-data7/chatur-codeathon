@@ -179,11 +179,10 @@ course_material = pathlib.Path(course_material_path)
 intermedate_doc_output_path = os.path.join(scratch_inter_root, course_name)
 intermedate_doc_output_path = os.path.abspath(intermedate_doc_output_path)
 
-vectordb_path = os.path.join(vectordb_root, course_name)
-vectordb_path = os.path.abspath(vectordb_path)
+vectordb_path = os.path.abspath(vectordb_root)
 
-if not args.add_db:
-    # clear db
+if args.delete_old:
+    # clear
     if os.path.exists(vectordb_path):
         print("removing old vectordb - %s" % vectordb_path)
         shutil.rmtree(vectordb_path)
