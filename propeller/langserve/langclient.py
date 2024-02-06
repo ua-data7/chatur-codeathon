@@ -34,6 +34,7 @@ PORT = int(sys.argv[2])
 VECTORSTORE = sys.argv[3]
 COLLECTION = sys.argv[4]
 OLLAMA_HOST = sys.argv[5]
+MODEL = sys.argv[6]
 
 print("vectorstore: %s, ollama_host: %s" % (VECTORSTORE, OLLAMA_HOST))
 
@@ -43,7 +44,7 @@ def format_documents(docs):
     print(out_docs)
     return out_docs
 
-"""You are a teaching assistant. Answer the student's question using information only and only from the context passage that is between triple quotes. When you answer the question, quote the text that you used to base your answer off. If you can't answer it, then say “I can't answer this question”.Context: 
+"""You are a teaching assistant. Answer the student's question using information only and only from the context passage that is between triple quotes. When you answer the question, quote the text that you used to base your answer off. If you can't answer it, then say “I can't answer this question”.Context:
 ```"""
 
 # Prompt
@@ -57,8 +58,8 @@ def format_documents(docs):
 prompt = ChatPromptTemplate.from_messages([
     SystemMessagePromptTemplate.from_template(
         """"You are a teaching assistant. Answer the student's question using information only and only from the context passage that is between triple quotes. When you answer the question, quote the text that you used to base your answer off. If you can't answer it, then say “I can't answer this question”.
-        
-        Context: 
+
+        Context:
         ```{context}```"""
     ),
     HumanMessagePromptTemplate.from_template("Question: {question}"),
@@ -72,7 +73,7 @@ class Question(CustomUserType):
 
 llm = Ollama(
     base_url="http://%s:11434" % OLLAMA_HOST,
-    model="mistral",
+    model=MODEL,
     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
 )
 
