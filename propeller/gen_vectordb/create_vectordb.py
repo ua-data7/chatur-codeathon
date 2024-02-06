@@ -9,6 +9,7 @@ import zipfile
 import requests
 import base64
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 from vectordb import VectorDB
 from webdav3.client import Client
@@ -83,6 +84,17 @@ def download_web_resource(url:str, output_path:str) -> None:
 
     with open(output_path_url, "w") as f:
         f.write(r.text)
+
+def download_web_resources(urls:str, output_path:str) -> None:
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        for url in urls:
+            if url.strip().startswith("#"):
+                continue
+
+            if len(url.strip()) == 0:
+                continue
+
+            executor.submit(download_web_resource, url.strip(), output_path)
     
 def is_file_ignored(name:str) -> bool:
     if name.startswith("~"):
@@ -141,15 +153,11 @@ def extract_bundle_files(course_material_path:str) -> None:
                 
                 os.makedirs(webpath, exist_ok=True)
 
+                
                 with open(fullpath, "r") as url_f:
-                    for line in url_f.readlines():
-                        if line.strip().startswith("#"):
-                            continue
+                    lines = url_f.readlines()
+                    download_web_resources(lines, webpath)
 
-                        if len(line.strip()) == 0:
-                            continue
-
-                        download_web_resource(line.strip(), webpath)
 
 ############################
 # Create vector db
