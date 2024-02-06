@@ -53,10 +53,13 @@ class VectorDB:
     persisted.
     """
 
-    def __init__(self, db_path:Optional[str]=None, collection_name:Optional[str]="langchain"):
+    def __init__(self, db_path:Optional[str]=None, collection_name:Optional[str]=None):
         self._embedding=GPT4AllEmbeddings()
         self._db_path = db_path
-        self._collection_name=collection_name
+        if collection_name:
+            self._collection_name=collection_name
+        else:
+            self._collection_name="langchain"
         
         client_settings = chromadb.Settings()
         if db_path:
