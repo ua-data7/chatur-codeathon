@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import pathlib
 import argparse
@@ -152,88 +154,96 @@ def extract_bundle_files(course_material_path:str) -> None:
 ############################
 # Create vector db
 ############################
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog='create_vectordb',
+        description='Create vectordb for course materials')
 
-parser = argparse.ArgumentParser(
-    prog='create_vectordb',
-    description='Create vectordb for course materials')
+    parser.add_argument('--no_download', action='store_true', help='do not download data')
+    parser.add_argument('--create_docs', action='store_true', help='create intermediate docs')
+    parser.add_argument('--delete_old', action='store_true', help='delete old db and intermediate docs')
+    parser.add_argument('--create_allinone', action='store_true', help='create all-in-one db')
+    parser.add_argument('--prepare_source', action='store_true', help='prepare source only (download and extract)')
+    parser.add_argument('course_numbers', nargs="+", help='course number')
+    args = parser.parse_args()
 
-parser.add_argument('--no_download', action='store_true', help='do not download data')
-parser.add_argument('--create_docs', action='store_true', help='create intermediate docs')
-parser.add_argument('--delete_old', action='store_true', help='delete old db and intermediate docs')
-parser.add_argument('--create_allinone', action='store_true', help='create all-in-one db')
-parser.add_argument('course_number', help='course number')
-args = parser.parse_args()
+    for course_number in args.course_numbers:
+        course_name = course_number.upper().strip()
 
-course_name = args.course_number.upper().strip()
-
-os.makedirs(vectordb_root, exist_ok=True)
-
-if args.create_docs:
-    os.makedirs(scratch_inter_root, exist_ok=True)
-
-# create
-# save file to local
-course_material_path = download_course_resource_webdav(course_name, no_download=args.no_download)
-course_material = pathlib.Path(course_material_path)
-
-intermedate_doc_output_path = os.path.join(scratch_inter_root, course_name)
-intermedate_doc_output_path = os.path.abspath(intermedate_doc_output_path)
-
-vectordb_path = os.path.abspath(vectordb_root)
-
-if args.delete_old:
-    # clear
-    if os.path.exists(vectordb_path):
-        print("removing old vectordb - %s" % vectordb_path)
-        shutil.rmtree(vectordb_path)
-
-    if os.path.exists(intermedate_doc_output_path):
-        print("removing old doc - %s" % intermedate_doc_output_path)
-        shutil.rmtree(intermedate_doc_output_path)
-
-collection_name = "langchain"
-if not args.create_allinone:
-    vectordb_path = os.path.join(vectordb_path, course_name)
-else:
-    collection_name = course_name
-
-print("creating vectordb - %s, collection - %s" % (vectordb_path, collection_name))
-vectorstore = VectorDB(db_path=vectordb_path, collection_name=collection_name)
-
-print("check tarballs/zip files")
-extract_bundle_files(course_material_path)
-
-print("adding class materials for %s" % course_name)
-for root, dirs, files in os.walk(course_material_path, topdown=True):
-    for file in files:
-        # file
-        fullpath = os.path.join(root, file)
-        relpath = os.path.relpath(fullpath, course_material_path)
-
-        docpath = os.path.join(intermedate_doc_output_path, relpath)
-        docpath = docpath + ".dump"
-
-        source = relpath
-        if file.startswith("b64:"):
-            newfile = file[4:].split(".")[0]
-            source = base64.b64decode(newfile).decode("ascii")
-
-        if is_file_ignored(file):
-            # ignore temp files
-            print("> ignore temp file '%s'" % fullpath)
-            continue
-        
-        if is_bundle_file(file):
-            # ignore, already extracted
-            continue
-
-        print("> adding '%s'" % fullpath)
+        os.makedirs(vectordb_root, exist_ok=True)
 
         if args.create_docs:
-            print("> intermediate output '%s'" % docpath)
-            vectorstore.add_file(path=fullpath, source=source, doc_output_path=docpath)
+            os.makedirs(scratch_inter_root, exist_ok=True)
+
+        # create
+        # save file to local
+        course_material_path = download_course_resource_webdav(course_name, no_download=args.no_download)
+        
+        intermedate_doc_output_path = os.path.join(scratch_inter_root, course_name)
+        intermedate_doc_output_path = os.path.abspath(intermedate_doc_output_path)
+
+        vectordb_path = os.path.abspath(vectordb_root)
+
+        if args.delete_old:
+            # clear
+            if os.path.exists(vectordb_path):
+                print("removing old vectordb - %s" % vectordb_path)
+                shutil.rmtree(vectordb_path)
+
+            if os.path.exists(intermedate_doc_output_path):
+                print("removing old doc - %s" % intermedate_doc_output_path)
+                shutil.rmtree(intermedate_doc_output_path)
+
+        collection_name = "langchain"
+        if not args.create_allinone:
+            vectordb_path = os.path.join(vectordb_path, course_name)
         else:
-            vectorstore.add_file(path=fullpath, source=source)
+            collection_name = course_name
+
+        print("creating vectordb - %s, collection - %s" % (vectordb_path, collection_name))
+        vectorstore = VectorDB(db_path=vectordb_path, collection_name=collection_name)
+
+        print("check tarballs/zip files")
+        extract_bundle_files(course_material_path)
+
+        if args.prepare_source:
+            continue
+            
+        print("adding class materials for %s" % course_name)
+        for root, dirs, files in os.walk(course_material_path, topdown=True):
+            for file in files:
+                # file
+                fullpath = os.path.join(root, file)
+                relpath = os.path.relpath(fullpath, course_material_path)
+
+                docpath = os.path.join(intermedate_doc_output_path, relpath)
+                docpath = docpath + ".dump"
+
+                source = relpath
+                if file.startswith("b64:"):
+                    newfile = file[4:].split(".")[0]
+                    source = base64.b64decode(newfile).decode("ascii")
+
+                if is_file_ignored(file):
+                    # ignore temp files
+                    print("> ignore temp file '%s'" % fullpath)
+                    continue
+                
+                if is_bundle_file(file):
+                    # ignore, already extracted
+                    continue
+
+                print("> adding '%s'" % fullpath)
+
+                if args.create_docs:
+                    print("> intermediate output '%s'" % docpath)
+                    vectorstore.add_file(path=fullpath, source=source, doc_output_path=docpath)
+                else:
+                    vectorstore.add_file(path=fullpath, source=source)
 
 
-print("VectorDB for %s is created" % course_name)
+        print("VectorDB for %s is created" % course_name)
+
+
+if __name__ == "__main__":
+    main()
