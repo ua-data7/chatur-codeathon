@@ -32,12 +32,12 @@ set_debug(True) # Comment out to remove debug messages
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 VECTORSTORE = sys.argv[3]
-COLLECTION = sys.argv[4]
-OLLAMA_HOST = sys.argv[5]
-MODEL = sys.argv[6]
+OLLAMA_HOST = sys.argv[4]
+MODEL = sys.argv[5]
 
 print("vectorstore: %s, ollama_host: %s" % (VECTORSTORE, OLLAMA_HOST))
 
+collections = next(os.walk(VECTORSTORE))[1]
 
 def format_documents(docs):
     out_docs = "\n".join(doc.page_content for doc in docs)
@@ -77,23 +77,32 @@ llm = Ollama(
     callback_manager=CallbackManager([StreamingStdOutCallbackHandler()])
 )
 
-vectorstore = VectorDBReader(db_path=VECTORSTORE, collection_name=COLLECTION)
-retriever = vectorstore.as_retriever()
-
-chain = (
-    {"context": retriever | format_documents, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
-
 app = FastAPI(
     title="LangChain Server",
     version="1.0",
     description="Spin up a simple api server using Langchain's Runnable interfaces",
 )
 
-add_routes(app, chain, path="/langserve")
+for vectordb_dir in collections:
+    vectorstore = VectorDBReader("%s/%s" % (VECTORSTORE, vectordb_dir))
+    retriever = vectorstore.as_retriever()
+
+    chain = (
+        {
+            "context": retriever | format_documents,
+            "question": RunnablePassthrough()
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    add_routes(app, chain, path="/langserve/%s" % vectordb_dir)
+
+
+@app.get("/")
+async def root():
+    return {"collections": collections}
 
 if __name__ == "__main__":
     import uvicorn
