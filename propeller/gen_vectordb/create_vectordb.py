@@ -9,7 +9,7 @@ import zipfile
 import requests
 import base64
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 from vectordb import VectorDB
 from webdav3.client import Client
@@ -192,6 +192,12 @@ def main() -> None:
 
         vectordb_path = os.path.abspath(vectordb_root)
 
+        collection_name = "langchain"
+        if not args.create_allinone:
+            vectordb_path = os.path.join(vectordb_path, course_name)
+        else:
+            collection_name = course_name
+
         if args.delete_old:
             # clear
             if os.path.exists(vectordb_path):
@@ -201,12 +207,6 @@ def main() -> None:
             if os.path.exists(intermedate_doc_output_path):
                 print("removing old doc - %s" % intermedate_doc_output_path)
                 shutil.rmtree(intermedate_doc_output_path)
-
-        collection_name = "langchain"
-        if not args.create_allinone:
-            vectordb_path = os.path.join(vectordb_path, course_name)
-        else:
-            collection_name = course_name
 
         print("creating vectordb - %s, collection - %s" % (vectordb_path, collection_name))
         vectorstore = VectorDB(db_path=vectordb_path, collection_name=collection_name)
