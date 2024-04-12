@@ -102,22 +102,28 @@ class VectorDB:
         new_docs = []
         for doc in docs:
             if hasattr(doc, "page_content") and len(doc.page_content) > 0:
-                content = doc.page_content.replace("\n"," ")
-                
-                doctype = None
-                clean = False
-                if is_pdf:
-                    doctype = "pdf"
-                    clean = True
+                try:
+                    content = doc.page_content.replace("\n"," ")
+                    
+                    doctype = None
+                    clean = False
+                    if is_pdf:
+                        doctype = "pdf"
+                        clean = True
 
-                seg = pysbd.Segmenter(language="en", doc_type=doctype, clean=clean)
-                all_sent = seg.segment(content)
-                page_content = "\n".join(all_sent)
-                page_content = page_content.replace("   ", "\n")
+                    seg = pysbd.Segmenter(language="en", doc_type=doctype, clean=clean)
+                    all_sent = seg.segment(content)
+                    page_content = "\n".join(all_sent)
+                    page_content = page_content.replace("   ", "\n")
 
-                if len(page_content) > 0:
-                    new_doc = Document(page_content=page_content, metadata=doc.metadata.copy())
-                    new_docs.append(new_doc)
+                    if len(page_content) > 0:
+                        new_doc = Document(page_content=page_content, metadata=doc.metadata.copy())
+                        new_docs.append(new_doc)
+                except Exception as e:
+                    # failed to clearn
+                    # just put as it is
+                    new_docs.append(doc)
+
 
         split_docs = self.text_splitter.split_documents(new_docs)
         self._make_doc_safe(split_docs)
